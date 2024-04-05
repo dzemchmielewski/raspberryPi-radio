@@ -6,7 +6,7 @@ from bus import Bus
 from configuration import STATIONS
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
 from controlers import StationController, VolumeController
-from tests.manual_controllers import ManualStationController
+from handtests.manual_controllers import ManualStationController
 from outputs import Tuner, LEDOutput
 
 

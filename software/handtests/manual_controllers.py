@@ -1,6 +1,4 @@
 #!/usr/bin/python
-from typing_extensions import deprecated
-
 from alsaaudio import Mixer
 
 from bus import Bus
@@ -8,7 +6,7 @@ from entities import RadioItem, VolumeStatus, VolumeEvent
 from controlers import StationController, VolumeController
 
 
-@deprecated
+# DEPRECATED - will be removed
 class ManualStationController(RadioItem):
     CODE = StationController.CODE
 

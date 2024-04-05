@@ -9,7 +9,7 @@ def clicked():
     print("CLICKED!!!")
 
 
-button = RotaryButton(18, clicked)
+button = RotaryButton(21, clicked)
 
 try:
     while True:
