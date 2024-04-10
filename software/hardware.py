@@ -1,5 +1,8 @@
+from threading import Thread
+from time import sleep
+
 import gpiozero
-from gpiozero import DigitalInputDevice, Button
+from gpiozero import DigitalInputDevice
 
 
 class Button:
@@ -103,3 +106,44 @@ class RotaryEncoder:
                         self.callback(self.direction)
 
         self.state = new_state
+
+
+class LED:
+
+    def __init__(self, pin, blinking_time=0.1):
+        self.led = gpiozero.LED(pin)
+        self.led.off()
+        self.stop_blinking = True
+        self.blink_thread = None
+        self.blinking_time = blinking_time
+
+    def __del__(self):
+        if self.blink_thread is not None:
+            self.stop_blinking = True
+            self.blink_thread.join()
+
+    def __blink__(self):
+        self.stop_blinking = False
+        while not self.stop_blinking:
+            self.led.toggle()
+            sleep(self.blinking_time)
+
+    def stop_blink(self):
+        if self.blink_thread is not None and self.blink_thread.is_alive():
+            self.stop_blinking = True
+            self.blink_thread.join()
+        self.blink_thread = None
+
+    def start_blink(self):
+        if self.blink_thread is None:
+            self.blink_thread = Thread(target=self.__blink__)
+            self.blink_thread.start()
+
+    def on(self):
+        self.stop_blink()
+        self.led.on()
+
+    def off(self):
+        self.stop_blink()
+        self.led.off()
+

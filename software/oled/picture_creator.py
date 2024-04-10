@@ -1,8 +1,10 @@
-import os
+import sys
 from datetime import datetime
 
 from PIL import Image, ImageDraw, ImageFont
-from assets import Assets
+sys.path.append('.')
+
+from oled.assets import Assets
 
 
 class PictureCreator:
@@ -12,6 +14,10 @@ class PictureCreator:
     COLOR_SCALE = 16
     C_WHITE = 15
     C_BLACK = 0
+
+    def __init__(self):
+        self.temporary_volume_counter = 0
+        self.volume_event = None
 
     @staticmethod
     def dim(draw, text, font):
@@ -54,6 +60,7 @@ class PictureCreator:
         draw.text((x, y), date, font=font3, fill=self.C_WHITE - 4)
 
     def text(self, draw, text, font_size, y):
+        font = ImageFont.truetype(Assets.font_path, 35)
 
         length = round(font.getlength(text))
         # align middle:
@@ -73,19 +80,27 @@ class PictureCreator:
             draw.rectangle([(4 * i + 64, 0), (4 * (i + 1) + 64, 96)], fill=i)
         self.frame(draw)
 
+    def volume_method_to_refactor(self, volume_event):
+        self.volume_event = volume_event
+        self.temporary_volume_counter = 0
+
     def main(self):
         image = Image.new('L', (self.WIDTH, self.HEIGHT), 0)
         draw = ImageDraw.Draw(image)
         # self.text(draw, "Test dzem", 18, 10)
         self.time(draw)
         self.frame(draw)
+
+        if self.volume_event is not None and self.temporary_volume_counter <= 6:
+            self.temporary_volume_counter += 1
+            self.text(draw, str(self.volume_event.current_status.volume) + "%", 15, 60)
+
         return image
 
 
 if __name__ == "__main__":
     creator = PictureCreator()
     image = creator.main()
-
     image = image.point(lambda p: p * 16)
     # image.show()
     image.save("out.bmp")

@@ -2,10 +2,9 @@
 from alsaaudio import Mixer
 
 from bus import Bus
-from configuration import STATIONS, RT_CURRENT_STATION, STATION_PIN_LEFT, STATION_PIN_RIGHT, VOLUME_PIN_LEFT, VOLUME_PIN_RIGHT, \
-    VOLUME_PIN_CLICK
+from configuration import STATIONS, RT_CURRENT_STATION
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG
-from inputs import RotaryEncoder, RotaryButton
+from hardware import RotaryEncoder, RotaryButton
 
 
 class StationController(RadioItem):
@@ -14,9 +13,9 @@ class StationController(RadioItem):
     EVENT_STATION_DOWN = "station_down"
     EVENT_STATION_SET = "station_set"
 
-    def __init__(self):
+    def __init__(self, pin_left, pin_right, pin_click):
         super(StationController, self).__init__(Bus(STATION_CONTROLLER_LOG, StationController.CODE))
-        self.encoder = RotaryEncoder(STATION_PIN_LEFT, STATION_PIN_RIGHT, self.rotated)
+        self.encoder = RotaryEncoder(pin_left, pin_right, self.rotated)
         self.stations_count = len(STATIONS)
         saved_station = self.bus.get(RT_CURRENT_STATION)
         if saved_station is None:
@@ -44,6 +43,9 @@ class StationController(RadioItem):
     def loop(self):
         pass
 
+    def exit(self):
+        pass
+
 
 class VolumeController(RadioItem):
     CODE = "volume_ctrl"
@@ -53,10 +55,10 @@ class VolumeController(RadioItem):
     EVENT_VOLUME_UNMUTE = "volume_unmute"
     DELTA = 3
 
-    def __init__(self):
+    def __init__(self, pin_left, pin_right, pin_click):
         super(VolumeController, self).__init__(Bus(VOLUME_CONTROLLER_LOG, VolumeController.CODE))
-        self.encoder = RotaryEncoder(VOLUME_PIN_LEFT, VOLUME_PIN_RIGHT, self.rotated)
-        self.button = RotaryButton(VOLUME_PIN_CLICK, self.clicked)
+        self.encoder = RotaryEncoder(pin_left, pin_right, self.rotated)
+        self.button = RotaryButton(pin_click, self.clicked)
         self.mixer = Mixer()
 
     def calculate_volume(self, delta):
@@ -102,4 +104,7 @@ class VolumeController(RadioItem):
             self.mixer.setvolume(new_status.volume)
 
     def loop(self):
+        pass
+
+    def exit(self):
         pass

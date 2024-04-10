@@ -12,6 +12,7 @@ STATION_CONTROLLER_LOG = "STAT-CTR"
 VOLUME_CONTROLLER_LOG = "VOL-CTR "
 LED_OUTPUT_LOG = "LED     "
 TUNER_OUTPUT_LOG = "TUNER   "
+DISPLAY_OUTPUT_LOG = "DISPLAY "
 
 
 class Station:
@@ -75,8 +76,13 @@ class RadioItem(ABC):
     def loop(self):
         pass
 
+    @abstractmethod
+    def exit(self):
+        pass
+
     def main(self, loop_sleep):
         while self.bus.consume_event(EVENT_EXIT) is None:
             self.loop()
             sleep(loop_sleep)
+        self.exit()
         self.bus.log("EXIT")

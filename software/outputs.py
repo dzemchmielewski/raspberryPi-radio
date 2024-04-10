@@ -1,13 +1,11 @@
 #!/usr/bin/python
-from threading import Thread
-from time import sleep
-
 import vlc
 
 from bus import Bus
-from entities import TunerStatus, RadioItem, TUNER_OUTPUT_LOG, LED_OUTPUT_LOG
-from gpiozero import LED
-from configuration import LED_TUNER_STATUS
+from entities import TunerStatus, RadioItem, TUNER_OUTPUT_LOG, LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG
+from hardware import LED
+from oled.lib import OLED_1in32
+from oled.picture_creator import PictureCreator
 
 
 class Tuner(RadioItem):
@@ -20,7 +18,7 @@ class Tuner(RadioItem):
         self.player = vlc.MediaPlayer()
         self.is_playing = False
 
-    def __del__(self):
+    def exit(self):
         self.player.stop()
 
     def status(self):
@@ -44,49 +42,48 @@ class Tuner(RadioItem):
                 self.bus.send_manager_event(Tuner.EVENT_PLAY_STATUS, self.status())
 
 
-class LEDOutput(RadioItem):
+class TunerStatusLED(RadioItem):
     CODE = "led"
     EVENT_STATUS = "status"
 
-    def __init__(self):
-        super(LEDOutput, self).__init__(Bus(LED_OUTPUT_LOG, LEDOutput.CODE))
-        self.led = LED(LED_TUNER_STATUS)
+    def __init__(self, pin):
+        super(TunerStatusLED, self).__init__(Bus(LED_OUTPUT_LOG, TunerStatusLED.CODE))
+        self.led = LED(pin)
         self.led.off()
-        self.stop_blinking = True
-        self.blink_thread = None
 
-    def __del__(self):
-        if self.blink_thread is not None:
-            self.stop_blinking = True
-            self.blink_thread.join()
-
-    def blink(self):
-        self.stop_blinking = False
-        while not self.stop_blinking:
-            self.led.toggle()
-            sleep(0.1)
-
-    def stop_blink(self):
-        if self.blink_thread is not None and self.blink_thread.is_alive():
-            self.stop_blinking = True
-            self.blink_thread.join()
-        self.blink_thread = None
-
-    def start_blink(self):
-        if self.blink_thread is None:
-            self.blink_thread = Thread(target=self.blink)
-            self.blink_thread.start()
+    def exit(self):
+        self.led.off()
 
     def loop(self):
-        if (event := self.bus.consume_event(LEDOutput.EVENT_STATUS)) is not None:
+        if (event := self.bus.consume_event(TunerStatusLED.EVENT_STATUS)) is not None:
 
             if event.status == TunerStatus.PLAYING:
-                self.stop_blink()
                 self.led.on()
 
             elif event.status == TunerStatus.TUNING:
-                self.start_blink()
+                self.led.start_blink()
 
             else:
-                self.stop_blink()
                 self.led.off()
+
+
+class Display(RadioItem):
+    CODE = "display"
+    EVENT_VOLUME = "volume"
+
+    def __init__(self):
+        super(Display, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE))
+        self.oled = OLED_1in32.OLED_1in32()
+        self.oled.Init()
+        self.oled.clear()
+        self.creator = PictureCreator()
+
+    def exit(self):
+        self.oled.clear()
+        self.oled.module_exit()
+
+    def loop(self):
+        if (event := self.bus.consume_event(Display.EVENT_VOLUME)) is not None:
+            self.creator.volume_method_to_refactor(event)
+
+        self.oled.ShowImage(self.oled.getbuffer(self.creator.main()))

@@ -3,11 +3,12 @@ import sys
 from threading import Thread
 
 from bus import Bus
-from configuration import STATIONS
+from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
+    LED_RED_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
 from controlers import StationController, VolumeController
 from handtests.manual_controllers import ManualStationController
-from outputs import Tuner, LEDOutput
+from outputs import Tuner, TunerStatusLED, Display
 
 
 class RadioManager(RadioItem):
@@ -16,33 +17,36 @@ class RadioManager(RadioItem):
         super(RadioManager, self).__init__(Bus(RADIO_LOG, RADIO_MANAGER_CODE))
         self.current_station = None
 
+    def exit(self):
+        pass
+
     def loop(self):
         if (event := self.bus.consume_event(StationController.EVENT_STATION_UP)) is not None:
             self.current_station = event
-            self.bus.send_event(LEDOutput.CODE, LEDOutput.EVENT_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
+            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
 
         if (event := self.bus.consume_event(StationController.EVENT_STATION_DOWN)) is not None:
             self.current_station = event
-            self.bus.send_event(LEDOutput.CODE, LEDOutput.EVENT_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
+            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
 
         if (event := self.bus.consume_event(StationController.EVENT_STATION_SET)) is not None:
             self.current_station = event
-            self.bus.send_event(LEDOutput.CODE, LEDOutput.EVENT_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
+            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
 
         if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_UP)) is not None:
-            pass
+            self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
         if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_DOWN)) is not None:
-            pass
+            self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
         if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_MUTE)) is not None:
-            pass
+            self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
         if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_UNMUTE)) is not None:
-            pass
+            self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
 
         if (event := self.bus.consume_event(Tuner.EVENT_PLAY_STATUS)) is not None:
-            self.bus.send_event(LEDOutput.CODE, LEDOutput.EVENT_STATUS, Status(event, STATIONS[self.current_station]))
+            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_STATUS, Status(event, STATIONS[self.current_station]))
 
 
 if __name__ == "__main__":
@@ -57,14 +61,14 @@ if __name__ == "__main__":
     if isPi:
         jobs = (
             Tuner(),
-            LEDOutput(),
-            StationController(),
-            VolumeController()
+            TunerStatusLED(LED_RED_PIN),
+            VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
+            StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN),
+            Display()
         )
     else:
         jobs = (
             Tuner(),
-            LEDOutput(),
             ManualStationController(),
             #ManualVolumeController()
         )
