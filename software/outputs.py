@@ -2,9 +2,13 @@
 import vlc
 
 from bus import Bus
+from configuration import FULL_LOAD
 from entities import TunerStatus, RadioItem, TUNER_OUTPUT_LOG, LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG
-from hardware import LED
-from oled.lib import OLED_1in32
+
+if FULL_LOAD:
+    from hardware import LED
+    from oled.lib import OLED_1in32
+
 from oled.picture_creator import PictureCreator
 
 

@@ -1,5 +1,11 @@
 #!/usr/bin/python
+import platform
+
 from entities import Station
+
+FULL_LOAD = True
+if platform.uname().machine == "x86_64":
+    FULL_LOAD = False
 
 STATIONS = (
     Station("Radio Nowy Świat", "RNS", "http://stream.rcs.revma.com/ypqt40u0x1zuv"),

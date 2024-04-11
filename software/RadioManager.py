@@ -1,13 +1,12 @@
 #!/usr/bin/python
-import sys
 from threading import Thread
 
 from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
-    LED_RED_PIN
+    LED_RED_PIN, FULL_LOAD
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
 from controlers import StationController, VolumeController
-from handtests.manual_controllers import ManualStationController
+from handtests.manual_controllers import ManualStationController, ManualVolumeController, ManualDisplay
 from outputs import Tuner, TunerStatusLED, Display
 
 
@@ -53,12 +52,7 @@ if __name__ == "__main__":
 
     radio = RadioManager()
 
-    isPi = True
-    n = len(sys.argv)
-    if n > 1 and sys.argv[1] == "local":
-        isPi = False
-
-    if isPi:
+    if FULL_LOAD:
         jobs = (
             Tuner(),
             TunerStatusLED(LED_RED_PIN),
@@ -69,8 +63,9 @@ if __name__ == "__main__":
     else:
         jobs = (
             Tuner(),
-            ManualStationController(),
-            #ManualVolumeController()
+            ManualDisplay(),
+            # ManualStationController(),
+            ManualVolumeController()
         )
 
     threads = [Thread(target=x.main, args=[0.4]) for x in jobs]

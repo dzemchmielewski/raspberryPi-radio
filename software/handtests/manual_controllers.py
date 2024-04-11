@@ -2,16 +2,16 @@
 from alsaaudio import Mixer
 
 from bus import Bus
-from entities import RadioItem, VolumeStatus, VolumeEvent
+from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG
 from controlers import StationController, VolumeController
+from oled.picture_creator import PictureCreator
 
 
-# DEPRECATED - will be removed
 class ManualStationController(RadioItem):
     CODE = StationController.CODE
 
     def __init__(self):
-        super(ManualStationController, self).__init__(Bus("STATION-CTRL", StationController.CODE))
+        super(ManualStationController, self).__init__(Bus(STATION_CONTROLLER_LOG, StationController.CODE))
 
     def loop(self):
         some_input = input(" STATION (type: up, down, set #) >> ")
@@ -32,12 +32,15 @@ class ManualStationController(RadioItem):
             case _:
                 print("Unrecognized action!")
 
+    def exit(self):
+        pass
+
 
 class ManualVolumeController(RadioItem):
     CODE = VolumeController.CODE
 
     def __init__(self):
-        super(ManualVolumeController, self).__init__(Bus("VOLUME-CTRL", ManualVolumeController.CODE))
+        super(ManualVolumeController, self).__init__(Bus(VOLUME_CONTROLLER_LOG, ManualVolumeController.CODE))
         self.mixer = Mixer()
 
     def volume_change(self, delta):
@@ -69,3 +72,26 @@ class ManualVolumeController(RadioItem):
                 pass
             case _:
                 print("Unrecognized action!")
+
+    def exit(self):
+        pass
+
+
+class ManualDisplay(RadioItem):
+    CODE = "display"
+    EVENT_VOLUME = "volume"
+
+    def __init__(self):
+        super(ManualDisplay, self).__init__(Bus(DISPLAY_OUTPUT_LOG, ManualDisplay.CODE))
+        self.creator = PictureCreator()
+
+    def exit(self):
+        pass
+
+    def loop(self):
+        if (event := self.bus.consume_event(ManualDisplay.EVENT_VOLUME)) is not None:
+            self.creator.volume_method_to_refactor(event)
+
+        image = self.creator.main()
+        image = image.point(lambda p: p * 16)
+        image.save("out.bmp")
