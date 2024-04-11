@@ -64,8 +64,8 @@ if __name__ == "__main__":
         jobs = (
             Tuner(),
             ManualDisplay(),
-            # ManualStationController(),
-            ManualVolumeController()
+            ManualStationController(),
+            # ManualVolumeController()
         )
 
     threads = [Thread(target=x.main, args=[0.4]) for x in jobs]

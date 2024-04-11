@@ -2,7 +2,7 @@ import sys
 from time import sleep
 
 sys.path.append('../')
-from inputs import RotaryEncoder
+from hardware import RotaryEncoder
 
 
 def value_changed(direction):

@@ -2,6 +2,7 @@
 from alsaaudio import Mixer
 
 from bus import Bus
+from configuration import RT_CURRENT_STATION, STATIONS
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG
 from controlers import StationController, VolumeController
 from oled.picture_creator import PictureCreator
@@ -12,14 +13,32 @@ class ManualStationController(RadioItem):
 
     def __init__(self):
         super(ManualStationController, self).__init__(Bus(STATION_CONTROLLER_LOG, StationController.CODE))
+        self.stations_count = len(STATIONS)
+        saved_station = self.bus.get(RT_CURRENT_STATION)
+        if saved_station is None:
+            self.current_station = 0
+            self.bus.set(RT_CURRENT_STATION, self.current_station)
+        else:
+            self.current_station = saved_station
+        self.bus.send_manager_event(StationController.EVENT_STATION_SET, self.current_station)
 
     def loop(self):
         some_input = input(" STATION (type: up, down, set #) >> ")
         match some_input:
             case "up":
-                self.bus.send_manager_event(StationController.EVENT_STATION_UP, True)
+              if self.current_station + 1 < self.stations_count:
+                  self.current_station = self.current_station + 1
+              else:
+                   self.current_station = 0
+              self.bus.send_manager_event(StationController.EVENT_STATION_UP, self.current_station)
+
             case "down":
-                self.bus.send_manager_event(StationController.EVENT_STATION_DOWN, True)
+                if self.current_station - 1 >= 0:
+                    self.current_station = self.current_station - 1
+                else:
+                    self.current_station = self.stations_count - 1
+                self.bus.send_manager_event(StationController.EVENT_STATION_DOWN, self.current_station)
+
             case "set":
                 number = input(" type in station number >> ")
                 try:
@@ -31,6 +50,8 @@ class ManualStationController(RadioItem):
                 pass
             case _:
                 print("Unrecognized action!")
+        self.bus.set(RT_CURRENT_STATION, self.current_station)
+
 
     def exit(self):
         pass

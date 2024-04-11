@@ -2,7 +2,7 @@ import sys
 from time import sleep
 
 sys.path.append('../')
-from inputs import RotaryButton
+from hardware import RotaryButton
 
 
 def clicked():

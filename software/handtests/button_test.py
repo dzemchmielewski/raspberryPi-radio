@@ -2,7 +2,7 @@ import sys
 import time
 
 sys.path.append('../')
-from inputs import Button
+from hardware import Button
 
 
 def clicked():
