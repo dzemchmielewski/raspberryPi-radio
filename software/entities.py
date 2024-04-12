@@ -68,9 +68,10 @@ class VolumeEvent:
 
 class RadioItem(ABC):
 
-    def __init__(self, bus):
+    def __init__(self, bus, loop_sleep=0.3):
         self.bus = bus
-        self.bus.log("START")
+        self.loop_sleep = loop_sleep
+        self.bus.log("START (loop: " + str(self.loop_sleep) + ")")
 
     @abstractmethod
     def loop(self):
@@ -80,9 +81,9 @@ class RadioItem(ABC):
     def exit(self):
         pass
 
-    def main(self, loop_sleep):
+    def run(self,):
         while self.bus.consume_event(EVENT_EXIT) is None:
             self.loop()
-            sleep(loop_sleep)
+            sleep(self.loop_sleep)
         self.exit()
         self.bus.log("EXIT")

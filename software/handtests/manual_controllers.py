@@ -5,7 +5,8 @@ from bus import Bus
 from configuration import RT_CURRENT_STATION, STATIONS
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG
 from controlers import StationController, VolumeController
-from oled.picture_creator import PictureCreator
+from oled.display_manager import DisplayManager
+from outputs import Tuner, Display
 
 
 class ManualStationController(RadioItem):
@@ -45,6 +46,9 @@ class ManualStationController(RadioItem):
                     self.bus.send_manager_event(StationController.EVENT_STATION_SET, int(number))
                 except ValueError:
                     self.bus.log("Error converting to int: " + number)
+            case "r":
+                self.bus.send_event(Tuner.CODE, Tuner.EVENT_RECORD, True)
+
             case "":
                 # do nothing
                 pass
@@ -99,20 +103,23 @@ class ManualVolumeController(RadioItem):
 
 
 class ManualDisplay(RadioItem):
-    CODE = "display"
-    EVENT_VOLUME = "volume"
 
-    def __init__(self):
-        super(ManualDisplay, self).__init__(Bus(DISPLAY_OUTPUT_LOG, ManualDisplay.CODE))
-        self.creator = PictureCreator()
+    CODE = Display.CODE
+
+    def __init__(self, loop_sleep=None):
+        super(ManualDisplay, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
+        self.manager = DisplayManager()
+        self.manager.welcome()
 
     def exit(self):
         pass
 
     def loop(self):
-        if (event := self.bus.consume_event(ManualDisplay.EVENT_VOLUME)) is not None:
-            self.creator.volume_method_to_refactor(event)
+        if (event := self.bus.consume_event(Display.EVENT_VOLUME)) is not None:
+            self.manager.volume(event)
+        if (event := self.bus.consume_event(Display.EVENT_TUNER_STATUS)) is not None:
+            self.manager.tuner_status(event)
 
-        image = self.creator.main()
+        image = self.manager.display()
         image = image.point(lambda p: p * 16)
         image.save("out.bmp")
