@@ -147,7 +147,7 @@ class OLED_1in32(config.RaspberryPi):
                     data = buf[addr] & (~0xf0 >> (x%2)*4)
                     buf[addr] &= data | ((color<<4) >> ((x%2)*4))
         elif(imwidth == self.height and imheight == self.width):
-            print ("Vertical")
+            #print ("Vertical")
             for y in range(imheight):       # 128
                 for x in range(imwidth):    # 96
                     # Set the bits for the column of pixels at the current position.

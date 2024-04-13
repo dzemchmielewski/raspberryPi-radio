@@ -39,3 +39,10 @@ BTN2_PIN = 27
 BTN3_PIN = 29
 BTN4_PIN = 31
 BTN5_PIN = 33
+
+with open("AudD-api-token.txt") as fp:
+    token = fp.readline()
+
+AUDD_URL = "https://api.audd.io/?api_token=" + token.strip()
+AUDD_CLIP_DIRECTORY = "clips/"
+AUDD_CLIP_DURATION = 5 * 1_000

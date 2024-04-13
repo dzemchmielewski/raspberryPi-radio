@@ -10,13 +10,13 @@ EVENT_EXIT = "exit"
 RADIO_LOG = "RADIO   "
 STATION_CONTROLLER_LOG = "STAT-CTR"
 VOLUME_CONTROLLER_LOG = "VOL-CTR "
+RECOGNIZE_CONTROLLER_LOG = "RECG-CTR"
 LED_OUTPUT_LOG = "LED     "
 TUNER_OUTPUT_LOG = "TUNER   "
 DISPLAY_OUTPUT_LOG = "DISPLAY "
 
 
 class Station:
-    SOME = "some"
 
     def __init__(self, name, code, url):
         self.name = name
@@ -49,7 +49,7 @@ class VolumeStatus:
 
 
 class Status:
-    def __init__(self, status, station):
+    def __init__(self, status: TunerStatus, station: Station):
         self.status = status
         self.station = station
 
@@ -58,12 +58,32 @@ class Status:
 
 
 class VolumeEvent:
-    def __init__(self, previous_status, current_status):
+    def __init__(self, previous_status: VolumeStatus, current_status: VolumeStatus):
         self.previous_status = previous_status
         self.current_status = current_status
 
     def __str__(self):
         return "[" + str(self.previous_status) + " => " + str(self.current_status) + "]"
+
+
+class RecognizeState(Enum):
+    CONNECTING = "C"
+    RECORDING = "R"
+    QUERYING = "Q"
+    DONE = "D"
+
+    def __str__(self):
+        return self.name
+
+
+class RecognizeStatus:
+    def __init__(self, state: RecognizeState, station: Station, json=None):
+        self.state = state
+        self.station = station
+        self.json = json
+
+    def __str__(self):
+        return "[" + str(self.state) + "][" + self.station.code + "][" + str(self.json) + "]"
 
 
 class RadioItem(ABC):
@@ -81,7 +101,7 @@ class RadioItem(ABC):
     def exit(self):
         pass
 
-    def run(self,):
+    def run(self, ):
         while self.bus.consume_event(EVENT_EXIT) is None:
             self.loop()
             sleep(self.loop_sleep)

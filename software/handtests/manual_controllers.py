@@ -4,7 +4,7 @@ from alsaaudio import Mixer
 from bus import Bus
 from configuration import RT_CURRENT_STATION, STATIONS
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG
-from controlers import StationController, VolumeController
+from controlers import StationController, VolumeController, RecognizeController
 from oled.display_manager import DisplayManager
 from outputs import Tuner, Display
 
@@ -47,7 +47,7 @@ class ManualStationController(RadioItem):
                 except ValueError:
                     self.bus.log("Error converting to int: " + number)
             case "r":
-                self.bus.send_event(Tuner.CODE, Tuner.EVENT_RECORD, True)
+                self.bus.send_manager_event(RecognizeController.EVENT_RECOGNIZE, True)
 
             case "":
                 # do nothing
@@ -119,6 +119,8 @@ class ManualDisplay(RadioItem):
             self.manager.volume(event)
         if (event := self.bus.consume_event(Display.EVENT_TUNER_STATUS)) is not None:
             self.manager.tuner_status(event)
+        if (event := self.bus.consume_event(Display.EVENT_RECOGNIZE_STATUS)) is not None:
+            self.manager.recognize_status(event)
 
         image = self.manager.display()
         image = image.point(lambda p: p * 16)

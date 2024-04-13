@@ -3,17 +3,17 @@ from threading import Thread
 
 from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
-    LED_RED_PIN, FULL_LOAD
+    LED_RED_PIN, FULL_LOAD, BTN2_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
-from controlers import StationController, VolumeController
+from controlers import StationController, VolumeController, RecognizeController
 from handtests.manual_controllers import ManualStationController, ManualVolumeController, ManualDisplay
 from outputs import Tuner, TunerStatusLED, Display
 
 
 class RadioManager(RadioItem):
 
-    def __init__(self):
-        super(RadioManager, self).__init__(Bus(RADIO_LOG, RADIO_MANAGER_CODE))
+    def __init__(self, loop_sleep=None):
+        super(RadioManager, self).__init__(Bus(RADIO_LOG, RADIO_MANAGER_CODE), loop_sleep=loop_sleep)
         self.current_station = None
 
     def exit(self):
@@ -51,10 +51,15 @@ class RadioManager(RadioItem):
             self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(event, STATIONS[self.current_station]))
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(event, STATIONS[self.current_station]))
 
+        if self.bus.consume_event(RecognizeController.EVENT_RECOGNIZE) is not None:
+            self.bus.send_event(Tuner.CODE, Tuner.EVENT_RECOGNIZE, True)
+
+        if (event := self.bus.consume_event(Tuner.EVENT_RECOGNIZE_STATUS)) is not None:
+            self.bus.send_event(Display.CODE, Display.EVENT_RECOGNIZE_STATUS, event)
 
 if __name__ == "__main__":
 
-    radio = RadioManager()
+    radio = RadioManager(0.1)
 
     if FULL_LOAD:
         jobs = (
@@ -62,6 +67,7 @@ if __name__ == "__main__":
             TunerStatusLED(LED_RED_PIN),
             VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN),
+            RecognizeController(BTN2_PIN),
             Display(0.1)
         )
     else:

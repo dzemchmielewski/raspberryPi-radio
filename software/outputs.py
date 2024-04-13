@@ -1,33 +1,37 @@
 #!/usr/bin/python
+import json
+import urllib
 from datetime import datetime, timedelta
+from threading import Thread
 from urllib.request import urlopen
 
+import requests
 import vlc
 
 from bus import Bus
-from configuration import FULL_LOAD
-from entities import TunerStatus, RadioItem, TUNER_OUTPUT_LOG, LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG
+from configuration import FULL_LOAD, AUDD_CLIP_DIRECTORY, AUDD_CLIP_DURATION, AUDD_URL
+from entities import TunerStatus, RadioItem, TUNER_OUTPUT_LOG, LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, Station, \
+    RecognizeStatus, RecognizeState
 from oled.display_manager import DisplayManager
 
 if FULL_LOAD:
     from hardware import LED
     from oled.lib import OLED_1in32
 
-from oled.picture_creator import PictureCreator
-
 
 class Tuner(RadioItem):
     CODE = "tuner"
     EVENT_STATION = "station"
     EVENT_PLAY_STATUS = "status"
-    EVENT_RECORD = "record"
+    EVENT_RECOGNIZE = "recognize"
+    EVENT_RECOGNIZE_STATUS = "recognize_status"
 
     def __init__(self):
         super(Tuner, self).__init__(Bus(TUNER_OUTPUT_LOG, Tuner.CODE))
         self.player = vlc.MediaPlayer()
         self.is_playing = False
         self.current_station = None
-        self.recording = 0
+        self.recognizing_thread = None
 
     def exit(self):
         self.player.stop()
@@ -37,15 +41,41 @@ class Tuner(RadioItem):
             return TunerStatus.PLAYING
         return TunerStatus.TUNING
 
-    @staticmethod
-    def record(filepath, stream, duration):
-        fd = open(filepath, 'wb')
-        begin = datetime.now()
-        duration = timedelta(milliseconds=duration)
-        while datetime.now() - begin < duration:
-            data = stream.read(10000)
-            fd.write(data)
-        fd.close()
+    def __recognize__(self, station: Station):
+        self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.CONNECTING, station))
+        try:
+            user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+            headers={'User-Agent':user_agent}
+            request=urllib.request.Request(station.url,None,headers)
+            stream = urllib.request.urlopen(request)
+            #stream = urlopen(station.url)
+
+            begin = datetime.now()
+            duration = timedelta(milliseconds=AUDD_CLIP_DURATION)
+            file_path = AUDD_CLIP_DIRECTORY + station.code + "-" + str(begin) + ".mp3"
+            fd = open(file_path, "wb")
+
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.RECORDING, station))
+            while datetime.now() - begin < duration:
+                data = stream.read(10000)
+                fd.write(data)
+            fd.close()
+
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.QUERYING, station))
+
+            with open(file_path, "rb") as f:
+                r = requests.post(AUDD_URL, files={'file': f})
+                response = json.loads(r.text)
+
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.DONE, station, response))
+
+        except requests.exceptions.RequestException as e:
+            self.bus.log("Error querying AudD: " + str(e))
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.DONE, station, json.loads("{\"status\":\"error\"}")))
+
+        except urllib.error.HTTPError as e:
+            self.bus.log("Error opening stream (" + station.url + "): " + str(e))
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.DONE, station, json.loads("{\"status\":\"error\"}")))
 
     def loop(self):
         if (station := self.bus.consume_event(Tuner.EVENT_STATION)) is not None:
@@ -57,9 +87,10 @@ class Tuner(RadioItem):
             self.current_station = station
             self.player.set_media(vlc.Media(station.url))
             self.player.play()
-        elif (event := self.bus.consume_event(Tuner.EVENT_RECORD)) is not None:
-            # TODO: thread this part
-            Tuner.record('handtests/clip.mp3', urlopen(self.current_station.url), 5000)
+        elif self.bus.consume_event(Tuner.EVENT_RECOGNIZE) is not None:
+            if self.recognizing_thread is None or not self.recognizing_thread.is_alive():
+                self.recognizing_thread = Thread(target=self.__recognize__, args=[self.current_station])
+                self.recognizing_thread.start()
         else:
             current_playing_status = self.player.is_playing()
             if self.is_playing != current_playing_status:
@@ -96,8 +127,9 @@ class Display(RadioItem):
     CODE = "display"
     EVENT_VOLUME = "volume"
     EVENT_TUNER_STATUS = "status"
+    EVENT_RECOGNIZE_STATUS = "recognize"
 
-    def __init__(self, loop_sleep = None):
+    def __init__(self, loop_sleep=None):
         super(Display, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
         self.oled = OLED_1in32.OLED_1in32()
         self.oled.Init()
@@ -114,5 +146,7 @@ class Display(RadioItem):
             self.manager.volume(event)
         if (event := self.bus.consume_event(Display.EVENT_TUNER_STATUS)) is not None:
             self.manager.tuner_status(event)
+        if (event := self.bus.consume_event(Display.EVENT_RECOGNIZE_STATUS)) is not None:
+            self.manager.recognize_status(event)
 
         self.oled.ShowImage(self.oled.getbuffer(self.manager.display()))

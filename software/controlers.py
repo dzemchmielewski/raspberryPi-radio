@@ -3,8 +3,8 @@ from alsaaudio import Mixer
 
 from bus import Bus
 from configuration import STATIONS, RT_CURRENT_STATION
-from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG
-from hardware import RotaryEncoder, RotaryButton
+from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG
+from hardware import RotaryEncoder, RotaryButton, Button
 
 
 class StationController(RadioItem):
@@ -108,3 +108,22 @@ class VolumeController(RadioItem):
 
     def exit(self):
         pass
+
+
+class RecognizeController(RadioItem):
+    CODE = "recognize_ctrl"
+    EVENT_RECOGNIZE = "recognize"
+
+    def __init__(self, pin):
+        super(RecognizeController, self).__init__(Bus(RECOGNIZE_CONTROLLER_LOG, RecognizeController.CODE))
+        self.button = Button(pin, self.clicked)
+
+    def clicked(self):
+        self.bus.send_manager_event(RecognizeController.EVENT_RECOGNIZE, True)
+
+    def loop(self):
+        pass
+
+    def exit(self):
+        pass
+
