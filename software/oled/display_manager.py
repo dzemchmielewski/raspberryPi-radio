@@ -41,7 +41,7 @@ class TunerStatusWindow(ShortLifeWindow):
             self.text = ["Próbujemy...", status.station.name]
         elif self.status == TunerStatus.PLAYING:
             self.text = ["To słuchamy!", status.station.name]
-        else: # self.status == TunerStatus.UNKNOWN
+        else:  # self.status == TunerStatus.UNKNOWN
             self.text = ["Już, moment..."]
 
     def is_completed(self) -> bool:
@@ -49,7 +49,7 @@ class TunerStatusWindow(ShortLifeWindow):
                 and self.is_life_span_passed())
 
     def draw(self, picture_creator) -> Image:
-        return picture_creator.text_window(DisplayManager.WIDTH - 10, self.text, [12,36])
+        return picture_creator.text_window(DisplayManager.WIDTH - 10, tuple(self.text), tuple([12, 36]))
 
 
 class RecognizeWindow(ShortLifeWindow):
@@ -83,15 +83,27 @@ class RecognizeWindow(ShortLifeWindow):
         return picture_creator.text_window(DisplayManager.WIDTH - 10, self.text, self.size)
 
 
+class SplashScreenWindow(ShortLifeWindow):
+
+    def __init__(self):
+        super(SplashScreenWindow, self).__init__(life_span=4 * 1_000)
+
+    def is_completed(self) -> bool:
+        return self.is_life_span_passed()
+
+    def draw(self, picture_creator) -> Image:
+        return picture_creator.splash_screen(DisplayManager.WIDTH, DisplayManager.HEIGHT)
+
+
 class DisplayManager:
     WIDTH = 128
     HEIGHT = 96
 
     def __init__(self):
         self.creator = PictureCreator()
+        self.splash = SplashScreenWindow()
         self.windows = []
         self.station_code = "[]"
-
 
     def welcome(self):
         pass
@@ -110,14 +122,19 @@ class DisplayManager:
         self.windows = [x for x in self.windows if not x.is_completed() and not isinstance(x, type(window))]
         self.windows += [window]
 
-
     def display(self):
-        main = Image.new('L', (self.WIDTH, self.HEIGHT), 0)
+        self.windows = [x for x in self.windows if not x.is_completed()]
 
+        if self.splash is not None:
+            if self.splash.is_completed():
+                self.splash = None
+            else:
+                return self.splash.draw(self.creator)
+
+        main = Image.new('L', (self.WIDTH, self.HEIGHT), 0)
         main.paste(self.creator.top_bar(DisplayManager.WIDTH, station=self.station_code), (0, 0))
         main.paste(self.creator.time(DisplayManager.WIDTH), (0, 30))
 
-        self.windows = [x for x in self.windows if not x.is_completed()]
         for w in self.windows:
             window_image = w.draw(self.creator)
             x = round((DisplayManager.WIDTH - window_image.size[0]) / 2)
@@ -140,11 +157,13 @@ class DisplayManager:
 if __name__ == "__main__":
     manager = DisplayManager()
 
-    #manager.tuner_status(Status(TunerStatus.UNKNOWN, Station("Radio Nowy Świat", "RNS", "http://stream.rcs.revma.com/ypqt40u0x1zuv")))
-    manager.tuner_status(Status(TunerStatus.TUNING, Station("Radio Nowy Świat", "RNS", "http://stream.rcs.revma.com/ypqt40u0x1zuv")))
-    #manager.tuner_status(Status(TunerStatus.PLAYING, Station("Los 40", "LOS40", "https://25683.live.streamtheworld.com/LOS40.mp3")))
+    # manager.tuner_status(Status(TunerStatus.UNKNOWN, Station("Radio Nowy Świat", "RNS", "http://stream.rcs.revma.com/ypqt40u0x1zuv")))
+    # manager.tuner_status(Status(TunerStatus.TUNING, Station("Radio Nowy Świat", "RNS", "http://stream.rcs.revma.com/ypqt40u0x1zuv")))
+    manager.tuner_status(Status(TunerStatus.PLAYING, Station("Los 40", "LOS40", "https://25683.live.streamtheworld.com/LOS40.mp3")))
 
-    image = manager.display()
-    image = image.point(lambda p: p * 16)
-    # image.show()
-    image.save("out.bmp")
+    while True:
+        image = manager.display()
+        image = image.point(lambda p: p * 16)
+        # image.show()
+        image.save("out.bmp")
+        time.sleep(0.1)

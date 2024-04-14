@@ -7,13 +7,13 @@ class Assets:
 
     assets_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
 
-
     font_path = os.path.join(assets_dir, 'Font.ttc')
     font_miscfixed_path = os.path.join(assets_dir, 'misc-fixed-bold-r-normal--15-140-75-75-c-90-i.ttf')
     font_dejavu_path = os.path.join(assets_dir, 'DejaVuSansMono.ttf')
     font_m3x6_path = os.path.join(assets_dir, 'm5x7.ttf')
 
     mordeczka = os.path.join(assets_dir, 'mordeczka.bmp')
+    dzem_radio_sig = os.path.join(assets_dir, 'dzem-radio-sig.bmp')
 
     font_oled = ImageFont.truetype(font_path, 8)
 

@@ -46,3 +46,11 @@ with open("AudD-api-token.txt") as fp:
 AUDD_URL = "https://api.audd.io/?api_token=" + token.strip()
 AUDD_CLIP_DIRECTORY = "clips/"
 AUDD_CLIP_DURATION = 5 * 1_000
+
+
+with open("accuweather-api-token.txt") as fp:
+    ACCUWEATHER_TOKEN = fp.readline().strip()
+ACCUWEATHER_LOCATION_ID = 273877
+ACCUWEATHER_FORECAST_URL="http://dataservice.accuweather.com/forecasts/v1/daily/1day/273877?apikey=" + ACCUWEATHER_TOKEN + "&details=true&metric=true"
+ACCUWEATHER_CURRENT_URL = "http://dataservice.accuweather.com/currentconditions/v1/273877?apikey=" + ACCUWEATHER_TOKEN + "&details=true"
+

@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime
+from functools import cache
 from operator import itemgetter
 
 from PIL import Image, ImageDraw, ImageFont
@@ -48,6 +49,15 @@ class PictureCreator:
         return result
 
     @staticmethod
+    @cache
+    def splash_screen(width, height):
+        result = Image.new('L', (width, height), PictureCreator.C_BLACK)
+        result.paste(Image.open(Assets.dzem_radio_sig), (7, 22))
+        draw = ImageDraw.Draw(result)
+        draw.rounded_rectangle([(1, 1), (width - 2, height - 2)], outline=PictureCreator.C_WHITE - 3, width=3, radius=30)
+        return result
+
+    @staticmethod
     def time(width):
         result = Image.new('L', (width, 0), PictureCreator.C_BLACK)
         draw = ImageDraw.Draw(result)
@@ -72,11 +82,13 @@ class PictureCreator:
 
         draw.text((x, 0), text[0], font=fonts[0], fill=PictureCreator.C_WHITE - 6, anchor="lt")
         draw.text((x + dims[0][0], 0), text[1], font=fonts[1], fill=PictureCreator.C_WHITE, anchor="lt")
-        draw.text((x + sum(x for x, y in dims[0:2]), max_y - dims[2][1]), text[2], font=fonts[2], fill=PictureCreator.C_WHITE - 6, anchor="lt")
+        draw.text((x + sum(x for x, y in dims[0:2]), max_y - dims[2][1]), text[2], font=fonts[2], fill=PictureCreator.C_WHITE - 6,
+                  anchor="lt")
         return result
 
     @staticmethod
-    def text_window(width, text = [], suggested_font_size=[]) -> Image:
+    @cache
+    def text_window(width, text=[], suggested_font_size=[]) -> Image:
         result = Image.new('L', (width, 0), PictureCreator.C_BLACK)
         draw = ImageDraw.Draw(result)
 
@@ -88,7 +100,7 @@ class PictureCreator:
         dims = []
         for i in range(0, len(text)):
             dim = PictureCreator.dim(draw, text[i], fonts[i])
-            while (dim[0]+6) > width:
+            while (dim[0] + 6) > width:
                 fonts[i] = fonts[i].font_variant(size=fonts[i].size - 1)
                 dim = PictureCreator.dim(draw, text[i], fonts[i])
             dims += [dim]
@@ -96,7 +108,7 @@ class PictureCreator:
         vertical_space = 6
 
         new_width = max(dims, key=itemgetter(0))[0] + 6
-        new_height = sum(y for x, y in dims[0:len(dims)]) + ((len(dims)+1)*vertical_space)
+        new_height = sum(y for x, y in dims[0:len(dims)]) + ((len(dims) + 1) * vertical_space)
 
         result = result.resize((new_width, new_height))
         draw = ImageDraw.Draw(result)
@@ -104,6 +116,7 @@ class PictureCreator:
         PictureCreator.__frame__(draw, new_width, new_height, fill=PictureCreator.C_BLACK + 3)
 
         for i in range(0, len(text)):
-            draw.text((round((new_width - dims[i][0]) / 2), vertical_space*(i+1) + sum(y for x,y in dims[0:i])), text[i], font=fonts[i], fill=PictureCreator.C_WHITE, anchor="lt")
+            draw.text((round((new_width - dims[i][0]) / 2), vertical_space * (i + 1) + sum(y for x, y in dims[0:i])), text[i],
+                      font=fonts[i], fill=PictureCreator.C_WHITE, anchor="lt")
 
         return result

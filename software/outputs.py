@@ -44,9 +44,8 @@ class Tuner(RadioItem):
     def __recognize__(self, station: Station):
         self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.CONNECTING, station))
         try:
-            user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
-            headers={'User-Agent':user_agent}
-            request=urllib.request.Request(station.url,None,headers)
+            headers={"User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7"}
+            request=urllib.request.Request(station.url, None, headers)
             stream = urllib.request.urlopen(request)
             #stream = urlopen(station.url)
 

@@ -63,7 +63,7 @@ scale image to:
 OLED_WIDTH   = 128  #OLED width
 OLED_HEIGHT  = 96   #OLED height
 
-bitmap conversion:
+bitmap conversion (run 2 times!)
 $ convert inout.bmp -depth 4 -colorspace gray -colors 16 BMP3:out.bmp
 
 
