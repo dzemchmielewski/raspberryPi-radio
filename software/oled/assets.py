@@ -17,6 +17,8 @@ class Assets:
 
     sunrise = os.path.join(assets_dir, 'sunmoon/sunrise-start.png_converted')
     sunset = os.path.join(assets_dir, 'sunmoon/sunset-start.png_converted')
+    moonrise = os.path.join(assets_dir, 'sunmoon/moonrise-start.png_converted')
+    moonset = os.path.join(assets_dir, 'sunmoon/moonset-start.png_converted')
 
     font_oled = ImageFont.truetype(font_path, 8)
 

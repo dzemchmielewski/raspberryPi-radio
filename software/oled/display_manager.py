@@ -106,15 +106,15 @@ class AstroWindow:
     def draw(self, width, height, picture_creator) -> Image:
         result = Image.new('L', (width, height), PictureCreator.C_BLACK)
 
-        sun = Image.open(Assets.sunset).convert('L')
+        sun = Image.open(Assets.moonset).convert('L')
         enh = ImageEnhance.Brightness(sun)
         sun = enh.enhance(0.04)
 
-        result.paste(sun, (0,0))
+        result.paste(sun, (0,1))
 
         text = [self.time(self.astro_event.today.sunrise)]
 
-        time = picture_creator.text_window(width, tuple(text), tuple([15]), vertical_space=5, horizontal_space=0, is_frame=False, font_path=Assets.font_path, debug=True)
+        time = picture_creator.text_window(width, tuple(text), tuple([20]), vertical_space=5, horizontal_space=0, is_frame=False, font_path=Assets.font_path, debug=True)
 
         result.paste(time, (round((width - time.size[0]) / 2), sun.size[1] + 1))
         return result
