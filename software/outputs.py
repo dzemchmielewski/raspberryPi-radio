@@ -127,6 +127,7 @@ class Display(RadioItem):
     EVENT_VOLUME = "volume"
     EVENT_TUNER_STATUS = "status"
     EVENT_RECOGNIZE_STATUS = "recognize"
+    EVENT_ASTRO_STATUS = "astro"
 
     def __init__(self, loop_sleep=None):
         super(Display, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
@@ -134,7 +135,6 @@ class Display(RadioItem):
         self.oled.Init()
         self.oled.clear()
         self.manager = DisplayManager()
-        self.manager.welcome()
 
     def exit(self):
         self.oled.clear()
@@ -146,6 +146,8 @@ class Display(RadioItem):
         if (event := self.bus.consume_event(Display.EVENT_TUNER_STATUS)) is not None:
             self.manager.tuner_status(event)
         if (event := self.bus.consume_event(Display.EVENT_RECOGNIZE_STATUS)) is not None:
+            self.manager.recognize_status(event)
+        if (event := self.bus.consume_event(Display.EVENT_ASTRO_STATUS)) is not None:
             self.manager.recognize_status(event)
 
         self.oled.ShowImage(self.oled.getbuffer(self.manager.display()))

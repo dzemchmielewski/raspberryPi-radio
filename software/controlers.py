@@ -1,9 +1,14 @@
 #!/usr/bin/python
+import json
+from datetime import time
+
+import requests
 from alsaaudio import Mixer
 
 from bus import Bus
-from configuration import STATIONS, RT_CURRENT_STATION
-from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG
+from configuration import STATIONS, RT_CURRENT_STATION, ACCUWEATHER_CURRENT_URL, ACCUWEATHER_FORECAST_URL
+from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG, \
+    ACCUWEATHER_CONTROLLER_LOG, WeatherEvent, now
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
@@ -127,3 +132,41 @@ class RecognizeController(RadioItem):
     def exit(self):
         pass
 
+
+class AccuweatherController(RadioItem):
+    CODE = "accuweather"
+    EVENT = "new_weather"
+
+    def __init__(self):
+        super(AccuweatherController, self).__init__(Bus(ACCUWEATHER_CONTROLLER_LOG, AccuweatherController.CODE), 2)
+        self.last_event: WeatherEvent = None
+        self.last_call:int = None
+        self.period = 60 * 60 * 1_000
+        #self.period = 30 * 1_000
+
+    def loop(self):
+        try:
+
+            if self.last_call is None or now() > self.last_call + self.period:
+
+                current = json.loads(requests.get(ACCUWEATHER_CURRENT_URL).text)
+                forecast = json.loads(requests.get(ACCUWEATHER_FORECAST_URL).text)
+                event = WeatherEvent(current, forecast)
+                if self.last_event is None or self.last_event.dates() != event.dates():
+                    self.last_event = event
+                    self.bus.send_manager_event(AccuweatherController.EVENT, event)
+                else:
+                    self.bus.log("No changes to the accuweather data.")
+                self.last_call = now()
+
+        except requests.exceptions.HTTPError as e:
+            self.bus.log(str(e))
+        except requests.exceptions.ConnectionError as e:
+            self.bus.log(str(e))
+        except requests.exceptions.Timeout as e:
+            self.bus.log(str(e))
+        except requests.exceptions.RequestException as e:
+            self.bus.log(str(e))
+
+    def exit(self):
+        pass

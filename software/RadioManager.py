@@ -5,7 +5,7 @@ from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
     LED_RED_PIN, FULL_LOAD, BTN2_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
-from controlers import StationController, VolumeController, RecognizeController
+from controlers import StationController, VolumeController, RecognizeController, AccuweatherController
 from handtests.manual_controllers import ManualStationController, ManualVolumeController, ManualDisplay
 from outputs import Tuner, TunerStatusLED, Display
 
@@ -68,13 +68,15 @@ if __name__ == "__main__":
             VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN),
             RecognizeController(BTN2_PIN),
-            Display(0.1)
+            Display(0.1),
+            # AccuweatherController()
         )
     else:
         jobs = (
             Tuner(),
             ManualStationController(),
             ManualDisplay(0.1),
+            # AccuweatherController()
             # ManualVolumeController()
         )
 

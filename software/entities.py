@@ -1,8 +1,8 @@
 #!/usr/bin/python
-
+from datetime import datetime
 from enum import Enum
 from abc import ABC, abstractmethod
-from time import sleep
+from time import sleep, time
 
 RADIO_MANAGER_CODE = "radio"
 EVENT_EXIT = "exit"
@@ -11,9 +11,14 @@ RADIO_LOG = "RADIO   "
 STATION_CONTROLLER_LOG = "STAT-CTR"
 VOLUME_CONTROLLER_LOG = "VOL-CTR "
 RECOGNIZE_CONTROLLER_LOG = "RECG-CTR"
+ACCUWEATHER_CONTROLLER_LOG = "ACCUWTHR"
 LED_OUTPUT_LOG = "LED     "
 TUNER_OUTPUT_LOG = "TUNER   "
 DISPLAY_OUTPUT_LOG = "DISPLAY "
+
+
+def now() -> int:
+    return round(time() * 1_000)
 
 
 class Station:
@@ -64,6 +69,35 @@ class VolumeEvent:
 
     def __str__(self):
         return "[" + str(self.previous_status) + " => " + str(self.current_status) + "]"
+
+
+class AstroDay:
+    def __init__(self, sunrise:datetime=None, sunset:datetime=None, moonrise:datetime=None, moonset:datetime=None, moon_phase:float=0):
+        self.sunrise = sunrise
+        self.sunset = sunset
+        self.moonrise = moonrise
+        self.moonset = moonset
+        self.moon_phase = moon_phase
+
+
+
+
+class AstroEvent:
+    def __init__(self, today: AstroDay = AstroDay(), tomorrow: AstroDay = AstroDay()):
+        self.today = today
+        self.tomorrow = tomorrow
+
+
+class WeatherEvent:
+    def __init__(self, current, forecast):
+        self.current = current
+        self.forecast = forecast
+
+    def dates(self):
+        return self.current[0]["LocalObservationDateTime"], self.forecast["Headline"]["EffectiveDate"]
+
+    def __str__(self):
+        return "[" + str(self.dates()) + "]"
 
 
 class RecognizeState(Enum):
