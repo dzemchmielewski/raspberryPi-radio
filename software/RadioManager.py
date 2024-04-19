@@ -5,7 +5,7 @@ from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
     LED_RED_PIN, FULL_LOAD, BTN2_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
-from controlers import StationController, VolumeController, RecognizeController, AccuweatherController
+from controlers import StationController, VolumeController, RecognizeController, AstroController
 from handtests.manual_controllers import ManualStationController, ManualVolumeController, ManualDisplay
 from outputs import Tuner, TunerStatusLED, Display
 
@@ -57,6 +57,12 @@ class RadioManager(RadioItem):
         if (event := self.bus.consume_event(Tuner.EVENT_RECOGNIZE_STATUS)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_RECOGNIZE_STATUS, event)
 
+        if (event := self.bus.consume_event(AstroController.EVENT_ASTRO_DATA)) is not None:
+            self.bus.send_event(Display.CODE, Display.EVENT_ASTRO_DATA, event)
+        if (event := self.bus.consume_event(Display.EVENT_REQUIRE_ASTRO_DATA)) is not None:
+            self.bus.send_event(AstroController.CODE, AstroController.EVENT_ASTRO_DATA_REQUEST, event)
+
+
 if __name__ == "__main__":
 
     radio = RadioManager(0.1)
@@ -68,6 +74,7 @@ if __name__ == "__main__":
             VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN),
             RecognizeController(BTN2_PIN),
+            AstroController(),
             Display(0.1),
             # AccuweatherController()
         )
@@ -76,6 +83,7 @@ if __name__ == "__main__":
             Tuner(),
             ManualStationController(),
             ManualDisplay(0.1),
+            AstroController(),
             # AccuweatherController()
             # ManualVolumeController()
         )

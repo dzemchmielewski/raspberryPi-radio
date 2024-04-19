@@ -9,7 +9,7 @@ import drawing
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from assets import Assets
 from configuration import SPLASH_SCREEN_DISPLAY, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
-from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroEvent, AstroDay
+from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, time_f
 from PIL import Image, ImageDraw, ImageEnhance
 
 
@@ -98,28 +98,29 @@ class SplashScreenWindow(ShortLifeWindow):
 
 
 class AstroWindow:
-    def __init__(self, astro_event: AstroEvent):
-        self.astro_event = astro_event
-
-    def time(self, time:datetime) -> str:
-        if time is not None:
-            return time.strftime("%H:%M")
-        return "--:--"
+    def __init__(self):
+        self.astro_data = None
 
     def draw(self, width, height) -> Image:
         result = Image.new('L', (width, height), drawing.C_BLACK)
 
-        sun = Image.open(Assets.moonset).convert('L')
+        sun = Image.open(Assets.sunrise).convert('L')
         enh = ImageEnhance.Brightness(sun)
         sun = enh.enhance(0.04)
 
         result.paste(sun, (0,1))
 
-        text = [self.time(self.astro_event.today.sunrise)]
+        next_day = chr(8594)
+        prev_day = chr(8592)
 
-        time = drawing.text_window(width, tuple(text), tuple([20]), vertical_space=5, horizontal_space=0, is_frame=False, font_path=Assets.font_path, debug=True)
+        if self.astro_data is not None:
+            text = [time_f(self.astro_data.sunrise)]
+        else:
+            text = [prev_day + time_f(None)]
 
-        result.paste(time, (round((width - time.size[0]) / 2), sun.size[1] + 1))
+        time_img = drawing.text_window(width, tuple(text), tuple([20]), vertical_space=5, horizontal_space=0, is_frame=False, font_path=Assets.font_path, debug=True)
+
+        result.paste(time_img, (round((width - time_img.size[0]) / 2), sun.size[1] + 1))
         return result
 
 
@@ -192,7 +193,7 @@ class DisplayManager:
         self.splash = SplashScreenWindow(width, height)
         self.windows = []
         self.station = None
-        self.astro_window = AstroWindow(AstroEvent())
+        self.astro_window = AstroWindow()
         self.main_window = MainWindow(width, height - 13, self.astro_window)
 
     def volume(self, event):
@@ -205,8 +206,14 @@ class DisplayManager:
         self.station = event.station
         self.add_window(TunerStatusWindow(event, self.width - 10))
 
-    def astro(self, event):
-        self.astro_window.astro_event = event
+    def astro(self, event: AstroData):
+        self.astro_window.astro_data = event
+
+    def new_astro(self):
+        today = datetime.date.today()
+        if self.astro_window.astro_data is None or self.astro_window.astro_data.day != today:
+            return today
+        return None
 
     def add_window(self, window):
         self.windows = [x for x in self.windows if not x.is_completed() and not isinstance(x, type(window))]
@@ -242,7 +249,12 @@ if __name__ == "__main__":
 
     manager.splash = None
     manager.station = STATIONS[2]
-    manager.astro(AstroEvent(AstroDay(datetime.time(5, 31), datetime.time(19, 3)), None))
+    manager.astro(AstroData(
+        datetime.date.today(),
+        datetime.time(5, 31), datetime.time(19, 3),
+        datetime.time(19, 17), None,
+        0.32))
+
 
 #    while True:
     if 1 == 1:

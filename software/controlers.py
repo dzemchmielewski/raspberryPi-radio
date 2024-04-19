@@ -1,14 +1,15 @@
 #!/usr/bin/python
 import json
-from datetime import time
+from datetime import date, timedelta, datetime, time
 
 import requests
 from alsaaudio import Mixer
 
 from bus import Bus
-from configuration import STATIONS, RT_CURRENT_STATION, ACCUWEATHER_CURRENT_URL, ACCUWEATHER_FORECAST_URL
+from configuration import STATIONS, RT_CURRENT_STATION, ACCUWEATHER_CURRENT_URL, ACCUWEATHER_FORECAST_URL, VISUALCROSSING_URL, \
+    VISUALCROSSING_TOKEN
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG, \
-    ACCUWEATHER_CONTROLLER_LOG, WeatherEvent, now
+    ACCUWEATHER_CONTROLLER_LOG, WeatherEvent, now, AstroData, ASTRO_CONTROLLER_LOG
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
@@ -128,6 +129,63 @@ class RecognizeController(RadioItem):
 
     def loop(self):
         pass
+
+    def exit(self):
+        pass
+
+
+class AstroController(RadioItem):
+    CODE = "astro_ctrl"
+    EVENT_ASTRO_DATA = "astro_data"
+    EVENT_ASTRO_DATA_REQUEST = "astro_data_req"
+
+    def __init__(self):
+        super(AstroController, self).__init__(Bus(ASTRO_CONTROLLER_LOG, AstroController.CODE), 2)
+
+    @staticmethod
+    def pt(time_str):
+        if time_str is not None:
+            return datetime.strptime(time_str, "%H:%M:%S")
+        return None
+
+    def call4data(self, date: date):
+        try:
+            d_from = (date - timedelta(days=1)).strftime("%Y-%m-%d")
+            d_to = (date + timedelta(days=5)).strftime("%Y-%m-%d")
+            self.bus.log("External call: " + d_from + " - " + d_to)
+
+            request = (VISUALCROSSING_URL
+                       + "/" + d_from + "/" + d_to
+                       + "?unitGroup=metric&key=" + VISUALCROSSING_TOKEN
+                       + "&contentType=json&elements=datetime,moonphase,sunrise,sunset,moonrise,moonset")
+            text = requests.get(request).text
+
+            response = json.loads(text)
+
+            for day in response["days"]:
+                data = AstroData(datetime.strptime(day["datetime"], "%Y-%m-%d").date(),
+                                 self.pt(day["sunrise"]), self.pt(day["sunset"]),
+                                 self.pt(day["moonrise"]), self.pt(day["moonset"]),
+                                 day["moonphase"])
+                self.bus.set(day["datetime"], data)
+            self.bus.log("External call completed (" + str(len(response["days"])) + " datasets saved).")
+
+        except requests.exceptions.HTTPError as e:
+            self.bus.log(str(e))
+        except requests.exceptions.ConnectionError as e:
+            self.bus.log(str(e))
+        except requests.exceptions.Timeout as e:
+            self.bus.log(str(e))
+        except requests.exceptions.RequestException as e:
+            self.bus.log(str(e))
+
+    def loop(self):
+        if (event := self.bus.consume_event(AstroController.EVENT_ASTRO_DATA_REQUEST)) is not None:
+            requested_day = event.strftime("%Y-%m-%d")
+            if (astro_data := self.bus.get(requested_day)) is None:
+                self.call4data(event)
+                astro_data = self.bus.get(requested_day)
+            self.bus.send_manager_event(AstroController.EVENT_ASTRO_DATA, astro_data)
 
     def exit(self):
         pass

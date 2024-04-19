@@ -3,7 +3,7 @@ from alsaaudio import Mixer
 
 from bus import Bus
 from configuration import RT_CURRENT_STATION, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
-from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG
+from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG, now
 from controlers import StationController, VolumeController, RecognizeController
 from display_manager import DisplayManager
 from outputs import Display
@@ -109,6 +109,7 @@ class ManualDisplay(RadioItem):
     def __init__(self, loop_sleep=None):
         super(ManualDisplay, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
         self.manager = DisplayManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
+        self.last_astro_req_sent = None
 
     def exit(self):
         pass
@@ -120,6 +121,14 @@ class ManualDisplay(RadioItem):
             self.manager.tuner_status(event)
         if (event := self.bus.consume_event(Display.EVENT_RECOGNIZE_STATUS)) is not None:
             self.manager.recognize_status(event)
+        if (event := self.bus.consume_event(Display.EVENT_ASTRO_DATA)) is not None:
+            self.manager.astro(event)
+
+        if (astro_date := self.manager.new_astro()) is not None:
+            # don't send request event more often, then once a minute
+            if self.last_astro_req_sent is None or (now() > self.last_astro_req_sent + 60 * 1_000):
+                self.last_astro_req_sent = now()
+                self.bus.send_manager_event(Display.EVENT_REQUIRE_ASTRO_DATA, astro_date)
 
         image = self.manager.display()
         image = image.point(lambda p: p * 16)

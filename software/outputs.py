@@ -11,7 +11,7 @@ import vlc
 from bus import Bus
 from configuration import FULL_LOAD, AUDD_CLIP_DIRECTORY, AUDD_CLIP_DURATION, AUDD_URL, DISPLAY_WIDTH, DISPLAY_HEIGHT
 from entities import TunerStatus, RadioItem, TUNER_OUTPUT_LOG, LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, Station, \
-    RecognizeStatus, RecognizeState
+    RecognizeStatus, RecognizeState, now
 from display_manager import DisplayManager
 
 if FULL_LOAD:
@@ -127,13 +127,15 @@ class Display(RadioItem):
     EVENT_VOLUME = "volume"
     EVENT_TUNER_STATUS = "status"
     EVENT_RECOGNIZE_STATUS = "recognize"
-    EVENT_ASTRO_STATUS = "astro"
+    EVENT_ASTRO_DATA = "astro"
+    EVENT_REQUIRE_ASTRO_DATA = "astro_req"
 
     def __init__(self, loop_sleep=None):
         super(Display, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
         self.oled = OLED_1in32.OLED_1in32()
         self.oled.Init()
         self.oled.clear()
+        self.last_astro_req_sent = None
         self.manager = DisplayManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
 
     def exit(self):
@@ -147,7 +149,13 @@ class Display(RadioItem):
             self.manager.tuner_status(event)
         if (event := self.bus.consume_event(Display.EVENT_RECOGNIZE_STATUS)) is not None:
             self.manager.recognize_status(event)
-        if (event := self.bus.consume_event(Display.EVENT_ASTRO_STATUS)) is not None:
-            self.manager.recognize_status(event)
+        if (event := self.bus.consume_event(Display.EVENT_ASTRO_DATA)) is not None:
+            self.manager.astro(event)
+
+        if (astro_date := self.manager.new_astro()) is not None:
+            # don't send request event more often, then once a minute
+            if self.last_astro_req_sent is None or (now() > self.last_astro_req_sent + 60 * 1_000):
+                self.last_astro_req_sent = now()
+                self.bus.send_manager_event(Display.EVENT_REQUIRE_ASTRO_DATA, astro_date)
 
         self.oled.ShowImage(self.oled.getbuffer(self.manager.display()))

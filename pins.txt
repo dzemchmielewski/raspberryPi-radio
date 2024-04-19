@@ -33,12 +33,15 @@
 
 https://picockpit.com/raspberry-pi/pl/spi-interfejs-serial-peripheral-interface/
 
+ VCC - czerwony
+ GND - czarny
+ 
  my wire: (gpioN - where N as BCM)
- DIN -> MOSI gpio10 (phys 19)
- CLK -> SCLK gpio11 (phys 23)
- CS  -> CE0  gpio8  (phys 24)
- DC  -> MISO gpio25 (phys 22)
- RST ->      gpio27 (phys 13)
+ DIN -> MOSI gpio10 (phys 19) niebieski
+ CLK -> SCLK gpio11 (phys 23) żółty
+ CS  -> CE0  gpio8  (phys 24) pomarańczowy
+ DC  -> MISO gpio25 (phys 22) zielony
+ RST ->      gpio27 (phys 13) biały
 
 
 

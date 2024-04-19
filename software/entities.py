@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 from abc import ABC, abstractmethod
 from time import sleep, time
@@ -12,6 +12,7 @@ STATION_CONTROLLER_LOG = "STAT-CTR"
 VOLUME_CONTROLLER_LOG = "VOL-CTR "
 RECOGNIZE_CONTROLLER_LOG = "RECG-CTR"
 ACCUWEATHER_CONTROLLER_LOG = "ACCUWTHR"
+ASTRO_CONTROLLER_LOG = "ASTR-CTR"
 LED_OUTPUT_LOG = "LED     "
 TUNER_OUTPUT_LOG = "TUNER   "
 DISPLAY_OUTPUT_LOG = "DISPLAY "
@@ -19,6 +20,12 @@ DISPLAY_OUTPUT_LOG = "DISPLAY "
 
 def now() -> int:
     return round(time() * 1_000)
+
+
+def time_f(t: datetime) -> str:
+    if t is not None:
+        return t.strftime("%H:%M")
+    return "--:--"
 
 
 class Station:
@@ -71,21 +78,20 @@ class VolumeEvent:
         return "[" + str(self.previous_status) + " => " + str(self.current_status) + "]"
 
 
-class AstroDay:
-    def __init__(self, sunrise:datetime=None, sunset:datetime=None, moonrise:datetime=None, moonset:datetime=None, moon_phase:float=0):
+class AstroData:
+    def __init__(self, day: date, sunrise: datetime, sunset: datetime, moonrise: datetime, moonset: datetime, moon_phase: float):
+        self.day = day
         self.sunrise = sunrise
         self.sunset = sunset
         self.moonrise = moonrise
         self.moonset = moonset
         self.moon_phase = moon_phase
 
-
-
-
-class AstroEvent:
-    def __init__(self, today: AstroDay = AstroDay(), tomorrow: AstroDay = AstroDay()):
-        self.today = today
-        self.tomorrow = tomorrow
+    def __str__(self):
+        return ("ASTRO[" + self.day.strftime("%Y-%m-%d") + "]"
+                + "[" + time_f(self.sunrise) + " " + time_f(self.sunset) + "]"
+                + "[" + time_f(self.moonrise) + " " + time_f(self.moonset) + "]"
+                + "[" + str(self.moon_phase) + "]")
 
 
 class WeatherEvent:
