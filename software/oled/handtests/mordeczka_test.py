@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 sys.path.append('../../')
 
 from oled.lib import OLED_1in32
-from oled.assets import Assets
+from assets import Assets
 
 def control_page(draw):
     for i in range(0, 16):

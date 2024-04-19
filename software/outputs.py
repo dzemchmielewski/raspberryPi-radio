@@ -9,10 +9,10 @@ import requests
 import vlc
 
 from bus import Bus
-from configuration import FULL_LOAD, AUDD_CLIP_DIRECTORY, AUDD_CLIP_DURATION, AUDD_URL
+from configuration import FULL_LOAD, AUDD_CLIP_DIRECTORY, AUDD_CLIP_DURATION, AUDD_URL, DISPLAY_WIDTH, DISPLAY_HEIGHT
 from entities import TunerStatus, RadioItem, TUNER_OUTPUT_LOG, LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, Station, \
     RecognizeStatus, RecognizeState
-from oled.display_manager import DisplayManager
+from display_manager import DisplayManager
 
 if FULL_LOAD:
     from hardware import LED
@@ -134,7 +134,7 @@ class Display(RadioItem):
         self.oled = OLED_1in32.OLED_1in32()
         self.oled.Init()
         self.oled.clear()
-        self.manager = DisplayManager()
+        self.manager = DisplayManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
 
     def exit(self):
         self.oled.clear()

@@ -2,11 +2,11 @@
 from alsaaudio import Mixer
 
 from bus import Bus
-from configuration import RT_CURRENT_STATION, STATIONS
+from configuration import RT_CURRENT_STATION, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG
 from controlers import StationController, VolumeController, RecognizeController
-from oled.display_manager import DisplayManager
-from outputs import Tuner, Display
+from display_manager import DisplayManager
+from outputs import Display
 
 
 class ManualStationController(RadioItem):
@@ -108,8 +108,7 @@ class ManualDisplay(RadioItem):
 
     def __init__(self, loop_sleep=None):
         super(ManualDisplay, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
-        self.manager = DisplayManager()
-        self.manager.welcome()
+        self.manager = DisplayManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
 
     def exit(self):
         pass

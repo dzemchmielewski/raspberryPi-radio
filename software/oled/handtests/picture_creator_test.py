@@ -3,7 +3,7 @@ from time import sleep
 
 sys.path.append('../../')
 
-from oled.picture_creator import PictureCreator
+import drawing
 from oled.lib import OLED_1in32
 
 if __name__ == "__main__":
@@ -14,8 +14,6 @@ if __name__ == "__main__":
         disp.Init()
         print("CLEAR DISPLAY...")
         disp.clear()
-
-        creator = PictureCreator()
 
         while True:
             image = creator.main()

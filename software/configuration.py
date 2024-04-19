@@ -45,14 +45,18 @@ BTN3_PIN = 29
 BTN4_PIN = 31
 BTN5_PIN = 33
 
-with open("AudD-api-token.txt") as fp:
+
+DISPLAY_WIDTH = 128
+DISPLAY_HEIGHT = 96
+
+with open("external/AudD-api-token.txt") as fp:
     AUDD_API_TOKEN = fp.readline().strip()
 AUDD_URL = "https://api.audd.io/?api_token=" + AUDD_API_TOKEN
 AUDD_CLIP_DIRECTORY = "clips/"
 AUDD_CLIP_DURATION = 5 * 1_000
 
 
-with open("accuweather-api-token.txt") as fp:
+with open("external/accuweather-api-token.txt") as fp:
     ACCUWEATHER_TOKEN = fp.readline().strip()
 ACCUWEATHER_LOCATION_ID = "273877"
 ACCUWEATHER_FORECAST_URL="http://dataservice.accuweather.com/forecasts/v1/daily/1day/" + ACCUWEATHER_LOCATION_ID + "?apikey=" + ACCUWEATHER_TOKEN + "&details=true&metric=true"
