@@ -40,6 +40,7 @@ def display_month(m: int) -> str:
         case _:
             return "  --  "
 
+
 def display_week_day(d: int) -> str:
     match d:
         case 6:
@@ -79,6 +80,7 @@ def __frame__(draw, size, fill=None):
     draw.rounded_rectangle([(0, 0), (width - 1, height - 1)], outline=C_WHITE, width=1, radius=3, fill=fill)
 
 
+@cache
 def top_bar(width, height=13, station="[]"):
     result = Image.new('L', (width, height), C_BLACK)
     draw = ImageDraw.Draw(result)
@@ -94,6 +96,7 @@ def top_bar(width, height=13, station="[]"):
     return result
 
 
+@cache
 def top_bar2(width, height, station=None):
     result = Image.new('L', (width, height), C_BLACK)
     draw = ImageDraw.Draw(result)
