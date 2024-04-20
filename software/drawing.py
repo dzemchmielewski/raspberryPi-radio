@@ -2,9 +2,10 @@ from datetime import datetime
 from functools import cache
 from operator import itemgetter
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 from assets import Assets
+from entities import AstroData, time_f
 
 COLOR_SCALE = 16
 C_WHITE = 15
@@ -191,5 +192,44 @@ def text_window(width, text=[], suggested_font_size=[], vertical_space=6, horizo
     for i in range(0, len(text)):
         draw.text((round((new_width - dims[i][0]) / 2), vertical_space * (i + 1) + sum(y for x, y in dims[0:i])), text[i],
                   font=fonts[i], fill=C_WHITE, anchor="lt")
+
+    return result
+
+
+@cache
+def create_astro_strip(width: int, height: int, astro_data: AstroData) -> Image:
+    result = Image.new('L', (width * 6, height), C_BLACK)
+
+    # next_day = chr(8594)
+    # prev_day = chr(8592)
+
+    # Sun & Moon rise & set:
+    icons = [Assets.sunrise, Assets.sunset, Assets.moonrise, Assets.moonset]
+    if astro_data is None:
+        text = [time_f(None)] * 4
+    else:
+        text = [time_f(astro_data.sunrise), time_f(astro_data.sunset), time_f(astro_data.moonrise), time_f(astro_data.moonset)]
+
+    for i in range(0, len(icons)):
+        img = Image.open(icons[i]).convert('L')
+        img = ImageEnhance.Brightness(img).enhance(0.04)
+        result.paste(img, (i * img.size[0], 0))
+        time_img = text_window(width, tuple([text[i]]), tuple([20]), vertical_space=5, horizontal_space=0, is_frame=False,
+                               font_path=Assets.font_path)
+        result.paste(time_img, ((i*width) + round((width - time_img.size[0]) / 2), img.size[1] + 1))
+
+    # Moon phase:
+    if astro_data is None:
+        phase = "..."
+    else:
+        phase = str(astro_data.moon_phase) + "%"
+
+    phase_img = text_window(width, tuple([phase]), tuple([20]), vertical_space=2, horizontal_space=0, is_frame=False,
+                               font_path=Assets.font_path)
+    result.paste(phase_img, ((4*width) + round((width - phase_img.size[0]) / 2), 0))
+
+    # Repeat first frame at the end:
+    first_frame = result.crop([0,0, width, height])
+    result.paste(first_frame, (5*width, 0))
 
     return result

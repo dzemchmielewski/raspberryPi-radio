@@ -93,6 +93,9 @@ class AstroData:
                 + "[" + time_f(self.moonrise) + " " + time_f(self.moonset) + "]"
                 + "[" + str(self.moon_phase) + "]")
 
+    def __hash__(self):
+        return hash((self.day, self.sunrise, self.sunset, self.moonrise, self.moonset, self.moon_phase))
+
 
 class WeatherEvent:
     def __init__(self, current, forecast):

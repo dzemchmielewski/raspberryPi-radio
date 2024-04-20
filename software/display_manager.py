@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from abc import ABC, abstractmethod
+from functools import cache
 
 import drawing
 
@@ -100,32 +101,32 @@ class SplashScreenWindow(ShortLifeWindow):
 class AstroWindow:
     def __init__(self):
         self.astro_data = None
+        self.in_movement = False
+        self.position = 0
+        self.last_stop = now()
+        self.stop_time = 2 * 1_000
 
     def draw(self, width, height) -> Image:
-        result = Image.new('L', (width, height), drawing.C_BLACK)
 
-        sun = Image.open(Assets.sunrise).convert('L')
-        enh = ImageEnhance.Brightness(sun)
-        sun = enh.enhance(0.04)
+        strip = drawing.create_astro_strip(width, height, self.astro_data)
 
-        result.paste(sun, (0,1))
+        if now() > (self.last_stop + self.stop_time):
+            self.in_movement = True
 
-        next_day = chr(8594)
-        prev_day = chr(8592)
+        if self.in_movement:
+            if self.position + width == strip.size[0]:
+                self.position = 0
 
-        if self.astro_data is not None:
-            text = [time_f(self.astro_data.sunrise)]
-        else:
-            text = [prev_day + time_f(None)]
+            self.position += 1
+            if self.position % width == 0:
+                self.in_movement = False
+                self.last_stop = now()
 
-        time_img = drawing.text_window(width, tuple(text), tuple([20]), vertical_space=5, horizontal_space=0, is_frame=False, font_path=Assets.font_path, debug=True)
-
-        result.paste(time_img, (round((width - time_img.size[0]) / 2), sun.size[1] + 1))
-        return result
+        return strip.crop([self.position, 0, self.position + width, height])
 
 
 class MainWindow:
-    def __init__(self, width:int, height:int, astro_window: AstroWindow):
+    def __init__(self, width: int, height: int, astro_window: AstroWindow):
         self.astro_window = astro_window
 
         self.width = width
@@ -137,13 +138,13 @@ class MainWindow:
         self.end_y = self.height
 
         # upper space split: 60% | 40%:
-        self.x_up = round((6/10) * self.width)
+        self.x_up = round((6 / 10) * self.width)
         # lower space split: 30% | 70%
-        self.x_low = round((3/10) * self.width)
+        self.x_low = round((3 / 10) * self.width)
         # split horizontaly in half
         self.y_middle = round(self.height / 2)
 
-    def draw(self, margin = 8):
+    def draw(self, margin=8):
         result = Image.new('L', (self.width, self.height), drawing.C_BLACK)
         draw = ImageDraw.Draw(result)
         # PictureCreator.__frame__(draw, (width, height), fill=drawing.C_BLACK + 5)
@@ -173,7 +174,8 @@ class MainWindow:
         # Quarter 1 - display date
         now = datetime.datetime.now()
         text = [drawing.display_week_day(now.weekday()) + ", " + str(now.day), drawing.display_month(now.month)]
-        return drawing.text_window(self.x_up - self.start_x, tuple(text), tuple([16, 34]), is_frame = False, vertical_space=2, fill=drawing.C_BLACK)
+        return drawing.text_window(self.x_up - self.start_x, tuple(text), tuple([16, 34]), is_frame=False, vertical_space=2,
+                                   fill=drawing.C_BLACK)
 
     def q3(self):
         # Quarter 3 - astrological information
@@ -182,7 +184,7 @@ class MainWindow:
     def q4(self):
         # Quarter 4 - display time
         text = [datetime.datetime.now().strftime("%H:%M")]
-        return drawing.text_window(self.end_x - self.x_low, tuple(text), tuple([34]), is_frame = False, fill=drawing.C_BLACK)
+        return drawing.text_window(self.end_x - self.x_low, tuple(text), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
 
 
 class DisplayManager:
@@ -230,10 +232,10 @@ class DisplayManager:
 
         main = Image.new('L', (self.width, self.height), 0)
         main.paste(drawing.top_bar2(self.width, 13, station=self.station), (0, 0))
-        #main.paste(self.creator.time(self.width), (0, 30))
+        # main.paste(self.creator.time(self.width), (0, 30))
         main.paste(self.main_window.draw(), (0, 13))
 
-        #main.paste(self.astro_window.draw(), (0, 78))
+        # main.paste(self.astro_window.draw(), (0, 78))
 
         for w in self.windows:
             window_image = w.draw()
@@ -255,9 +257,8 @@ if __name__ == "__main__":
         datetime.time(19, 17), None,
         0.32))
 
-
-#    while True:
-    if 1 == 1:
+    while True:
+        #    if 1 == 1:
         image = manager.display()
         image = image.point(lambda p: p * 16)
         # image.show()
