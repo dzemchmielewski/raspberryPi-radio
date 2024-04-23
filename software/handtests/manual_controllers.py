@@ -1,70 +1,54 @@
 #!/usr/bin/python
-from alsaaudio import Mixer
-
 from bus import Bus
-from configuration import RT_CURRENT_STATION, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
-from entities import RadioItem, STATION_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG, now
-from controlers import StationController, VolumeController, RecognizeController, AbstractVolumeController
+from configuration import DISPLAY_WIDTH, DISPLAY_HEIGHT
+from entities import RadioItem, DISPLAY_OUTPUT_LOG, now
+from controlers import VolumeController, RecognizeController, AbstractVolumeController, AbstractStationController
 from display_manager import DisplayManager
 from outputs import Display
 
 
 class KeyboardController(RadioItem):
-    CODE = StationController.CODE
+    CODE = "keyboard"
 
     def __init__(self):
-        super(KeyboardController, self).__init__(Bus(STATION_CONTROLLER_LOG, StationController.CODE))
+        super(KeyboardController, self).__init__(Bus("KBRD-CTR", KeyboardController.CODE))
         self.volume_ctrl = ManualVolumeController()
-        self.stations_count = len(STATIONS)
-        saved_station = self.bus.get(RT_CURRENT_STATION)
-        if saved_station is None:
-            self.current_station = 0
-            self.bus.set(RT_CURRENT_STATION, self.current_station)
-        else:
-            self.current_station = saved_station
-        self.bus.send_manager_event(StationController.EVENT_STATION_SET, self.current_station)
+        self.station_ctrl = ManualStationController()
 
     def loop(self):
         some_input = input(" STATION (type: up, down)  VOLUME (type: vup, vdown, vmute >> \n")
         match some_input:
             case "up":
-                if self.current_station + 1 < self.stations_count:
-                    self.current_station = self.current_station + 1
-                else:
-                    self.current_station = 0
-                self.bus.send_manager_event(StationController.EVENT_STATION_UP, self.current_station)
-
+                self.station_ctrl.rotated('R')
             case "down":
-                if self.current_station - 1 >= 0:
-                    self.current_station = self.current_station - 1
-                else:
-                    self.current_station = self.stations_count - 1
-                self.bus.send_manager_event(StationController.EVENT_STATION_DOWN, self.current_station)
-
+                self.station_ctrl.rotated('L')
             case "vup":
                 self.volume_ctrl.rotated('R')
             case "vdown":
                 self.volume_ctrl.rotated('L')
             case "vmute":
                 self.volume_ctrl.clicked()
-
             case "r":
                 self.bus.send_manager_event(RecognizeController.EVENT_RECOGNIZE, True)
-
             case "":
                 # do nothing
                 pass
             case _:
                 print("Unrecognized action!")
-        self.bus.set(RT_CURRENT_STATION, self.current_station)
 
     def exit(self):
         pass
 
 
+class ManualStationController(AbstractStationController):
+    def __init__(self):
+        super(ManualStationController, self).__init__()
+
+
 class ManualVolumeController(AbstractVolumeController):
     def __init__(self):
-        super(ManualVolumeController, self).__init__(VolumeController.CODE)
+        super(ManualVolumeController, self).__init__()
+
 
 class ManualDisplay(RadioItem):
     CODE = Display.CODE

@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import json
-from abc import abstractmethod
 from datetime import date, timedelta, datetime, time
 
 import requests
@@ -14,15 +13,12 @@ from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LO
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
-class StationController(RadioItem):
+class AbstractStationController(RadioItem):
     CODE = "station_ctrl"
-    EVENT_STATION_UP = "station_up"
-    EVENT_STATION_DOWN = "station_down"
-    EVENT_STATION_SET = "station_set"
+    EVENT_STATION = "station_up"
 
-    def __init__(self, pin_left, pin_right, pin_click):
-        super(StationController, self).__init__(Bus(STATION_CONTROLLER_LOG, StationController.CODE))
-        self.encoder = RotaryEncoder(pin_left, pin_right, self.rotated)
+    def __init__(self):
+        super(AbstractStationController, self).__init__(Bus(STATION_CONTROLLER_LOG, AbstractStationController.CODE))
         self.stations_count = len(STATIONS)
         saved_station = self.bus.get(RT_CURRENT_STATION)
         if saved_station is None:
@@ -30,7 +26,7 @@ class StationController(RadioItem):
             self.bus.set(RT_CURRENT_STATION, self.current_station)
         else:
             self.current_station = saved_station
-        self.bus.send_manager_event(StationController.EVENT_STATION_SET, self.current_station)
+        self.bus.send_manager_event(AbstractStationController.EVENT_STATION, self.current_station)
 
     def rotated(self, direction):
         if direction == RotaryEncoder.DIRECTION_RIGHT:
@@ -38,13 +34,13 @@ class StationController(RadioItem):
                 self.current_station = self.current_station + 1
             else:
                 self.current_station = 0
-            self.bus.send_manager_event(StationController.EVENT_STATION_UP, self.current_station)
+            self.bus.send_manager_event(AbstractStationController.EVENT_STATION, self.current_station)
         else:  # direction == RotaryEncoder.DIRECTION_LEFT
             if self.current_station - 1 >= 0:
                 self.current_station = self.current_station - 1
             else:
                 self.current_station = self.stations_count - 1
-            self.bus.send_manager_event(StationController.EVENT_STATION_DOWN, self.current_station)
+            self.bus.send_manager_event(AbstractStationController.EVENT_STATION, self.current_station)
         self.bus.set(RT_CURRENT_STATION, self.current_station)
 
     def loop(self):
@@ -55,11 +51,12 @@ class StationController(RadioItem):
 
 
 class AbstractVolumeController(RadioItem):
-    DELTA = 3
+    CODE = "volume_ctrl"
     EVENT_VOLUME = "volume"
+    DELTA = 3
 
-    def __init__(self, code):
-        super(AbstractVolumeController, self).__init__(Bus(VOLUME_CONTROLLER_LOG, code))
+    def __init__(self):
+        super(AbstractVolumeController, self).__init__(Bus(VOLUME_CONTROLLER_LOG, AbstractVolumeController.CODE))
         self.mixer = Mixer()
 
     def calculate_volume(self, delta):
@@ -111,11 +108,15 @@ class AbstractVolumeController(RadioItem):
         pass
 
 
-class VolumeController(AbstractVolumeController):
-    CODE = "volume_ctrl"
+class StationController(AbstractStationController):
+    def __init__(self, pin_left, pin_right):
+        super(StationController, self).__init__()
+        self.encoder = RotaryEncoder(pin_left, pin_right, self.rotated)
 
+
+class VolumeController(AbstractVolumeController):
     def __init__(self, pin_left, pin_right, pin_click):
-        super(VolumeController, self).__init__(VolumeController.CODE)
+        super(VolumeController, self).__init__()
         self.encoder = RotaryEncoder(pin_left, pin_right, self.rotated)
         self.button = RotaryButton(pin_click, self.clicked)
 

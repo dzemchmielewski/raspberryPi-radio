@@ -20,19 +20,7 @@ class RadioManager(RadioItem):
         pass
 
     def loop(self):
-        if (event := self.bus.consume_event(StationController.EVENT_STATION_UP)) is not None:
-            self.current_station = event
-            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
-            self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
-            self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
-
-        if (event := self.bus.consume_event(StationController.EVENT_STATION_DOWN)) is not None:
-            self.current_station = event
-            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
-            self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
-            self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
-
-        if (event := self.bus.consume_event(StationController.EVENT_STATION_SET)) is not None:
+        if (event := self.bus.consume_event(StationController.EVENT_STATION)) is not None:
             self.current_station = event
             self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
@@ -47,7 +35,6 @@ class RadioManager(RadioItem):
 
         if self.bus.consume_event(RecognizeController.EVENT_RECOGNIZE) is not None:
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_RECOGNIZE, True)
-
         if (event := self.bus.consume_event(Tuner.EVENT_RECOGNIZE_STATUS)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_RECOGNIZE_STATUS, event)
 
