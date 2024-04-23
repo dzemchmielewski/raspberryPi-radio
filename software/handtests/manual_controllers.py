@@ -3,17 +3,18 @@ from alsaaudio import Mixer
 
 from bus import Bus
 from configuration import RT_CURRENT_STATION, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
-from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG, now
-from controlers import StationController, VolumeController, RecognizeController
+from entities import RadioItem, STATION_CONTROLLER_LOG, DISPLAY_OUTPUT_LOG, now
+from controlers import StationController, VolumeController, RecognizeController, AbstractVolumeController
 from display_manager import DisplayManager
 from outputs import Display
 
 
-class ManualStationController(RadioItem):
+class KeyboardController(RadioItem):
     CODE = StationController.CODE
 
     def __init__(self):
-        super(ManualStationController, self).__init__(Bus(STATION_CONTROLLER_LOG, StationController.CODE))
+        super(KeyboardController, self).__init__(Bus(STATION_CONTROLLER_LOG, StationController.CODE))
+        self.volume_ctrl = ManualVolumeController()
         self.stations_count = len(STATIONS)
         saved_station = self.bus.get(RT_CURRENT_STATION)
         if saved_station is None:
@@ -24,14 +25,14 @@ class ManualStationController(RadioItem):
         self.bus.send_manager_event(StationController.EVENT_STATION_SET, self.current_station)
 
     def loop(self):
-        some_input = input(" STATION (type: up, down, set #) >> ")
+        some_input = input(" STATION (type: up, down)  VOLUME (type: vup, vdown, vmute >> \n")
         match some_input:
             case "up":
-              if self.current_station + 1 < self.stations_count:
-                  self.current_station = self.current_station + 1
-              else:
-                   self.current_station = 0
-              self.bus.send_manager_event(StationController.EVENT_STATION_UP, self.current_station)
+                if self.current_station + 1 < self.stations_count:
+                    self.current_station = self.current_station + 1
+                else:
+                    self.current_station = 0
+                self.bus.send_manager_event(StationController.EVENT_STATION_UP, self.current_station)
 
             case "down":
                 if self.current_station - 1 >= 0:
@@ -40,12 +41,13 @@ class ManualStationController(RadioItem):
                     self.current_station = self.stations_count - 1
                 self.bus.send_manager_event(StationController.EVENT_STATION_DOWN, self.current_station)
 
-            case "set":
-                number = input(" type in station number >> ")
-                try:
-                    self.bus.send_manager_event(StationController.EVENT_STATION_SET, int(number))
-                except ValueError:
-                    self.bus.log("Error converting to int: " + number)
+            case "vup":
+                self.volume_ctrl.rotated('R')
+            case "vdown":
+                self.volume_ctrl.rotated('L')
+            case "vmute":
+                self.volume_ctrl.clicked()
+
             case "r":
                 self.bus.send_manager_event(RecognizeController.EVENT_RECOGNIZE, True)
 
@@ -56,54 +58,29 @@ class ManualStationController(RadioItem):
                 print("Unrecognized action!")
         self.bus.set(RT_CURRENT_STATION, self.current_station)
 
-
     def exit(self):
         pass
 
 
-class ManualVolumeController(RadioItem):
-    CODE = VolumeController.CODE
-
+class ManualVolumeController(AbstractVolumeController):
     def __init__(self):
-        super(ManualVolumeController, self).__init__(Bus(VOLUME_CONTROLLER_LOG, ManualVolumeController.CODE))
+        super(ManualVolumeController, self).__init__(VolumeController.CODE)
         self.mixer = Mixer()
 
-    def volume_change(self, delta):
-        status = VolumeStatus(self.mixer.getvolume()[0], self.mixer.getmute()[0])
+    def get_volume(self):
+        return self.mixer.getvolume()[0]
 
-        if 0 <= status.volume + delta <= 100:
-            new_status = VolumeStatus(status.volume + delta, status.is_muted)
-        elif status.volume + delta < 0:
-            new_status = VolumeStatus(0, status.is_muted)
-        else:  # status.volume + delta > 100
-            new_status = VolumeStatus(100, status.is_muted)
+    def set_volume(self, volume):
+        self.mixer.setvolume(volume)
 
-        if delta >= 0:
-            self.bus.send_manager_event(VolumeController.EVENT_VOLUME_UP, VolumeEvent(status, new_status))
-        else:  # delta < 0
-            self.bus.send_manager_event(VolumeController.EVENT_VOLUME_DOWN, VolumeEvent(status, new_status))
+    def get_mute(self):
+        return self.mixer.getmute()[0]
 
-        self.mixer.setvolume(status.volume + delta)
-
-    def loop(self):
-        some_input = input(" VOLUME (type: up, down, set #) >> ")
-        match some_input:
-            case "up":
-                self.volume_change(VolumeController.DELTA)
-            case "down":
-                self.volume_change(-VolumeController.DELTA)
-            case "":
-                # do nothing
-                pass
-            case _:
-                print("Unrecognized action!")
-
-    def exit(self):
-        pass
+    def set_mute(self, mute):
+        self.mixer.setmute(mute)
 
 
 class ManualDisplay(RadioItem):
-
     CODE = Display.CODE
 
     def __init__(self, loop_sleep=None):

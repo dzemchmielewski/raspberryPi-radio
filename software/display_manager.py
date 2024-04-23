@@ -10,7 +10,7 @@ import drawing
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from assets import Assets
 from configuration import SPLASH_SCREEN_DISPLAY, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
-from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, time_f
+from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, time_f, VolumeEvent
 from PIL import Image, ImageDraw, ImageEnhance
 
 
@@ -52,6 +52,20 @@ class TunerStatusWindow(ShortLifeWindow):
 
     def draw(self) -> Image:
         return drawing.text_window(self.width, tuple(self.text), tuple([12, 36]))
+
+
+class VolumeWindow(ShortLifeWindow):
+
+    def __init__(self, volume: VolumeEvent, width: int):
+        super(VolumeWindow, self).__init__(width=width)
+        self.volume = volume
+        self.text = ["Volume Event TODO"]
+
+    def is_completed(self) -> bool:
+        return self.is_life_span_passed()
+
+    def draw(self) -> Image:
+        return drawing.text_window(self.width, tuple(self.text), tuple([36]))
 
 
 class RecognizeWindow(ShortLifeWindow):
@@ -199,7 +213,7 @@ class DisplayManager:
         self.main_window = MainWindow(width, height - 13, self.astro_window)
 
     def volume(self, event):
-        pass
+        self.add_window(VolumeWindow(event, self.width - 10))
 
     def recognize_status(self, event):
         self.add_window(RecognizeWindow(event, self.width - 10))

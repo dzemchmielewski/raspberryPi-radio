@@ -6,7 +6,7 @@ from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, 
     LED_RED_PIN, FULL_LOAD, BTN2_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
 from controlers import StationController, VolumeController, RecognizeController, AstroController
-from handtests.manual_controllers import ManualStationController, ManualVolumeController, ManualDisplay
+from handtests.manual_controllers import KeyboardController, ManualDisplay
 from outputs import Tuner, TunerStatusLED, Display
 
 
@@ -38,13 +38,7 @@ class RadioManager(RadioItem):
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
 
-        if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_UP)) is not None:
-            self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
-        if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_DOWN)) is not None:
-            self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
-        if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_MUTE)) is not None:
-            self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
-        if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME_UNMUTE)) is not None:
+        if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
 
         if (event := self.bus.consume_event(Tuner.EVENT_PLAY_STATUS)) is not None:
@@ -81,11 +75,10 @@ if __name__ == "__main__":
     else:
         jobs = (
             Tuner(),
-            ManualStationController(),
+            KeyboardController(),
             ManualDisplay(0.1),
             AstroController(),
             # AccuweatherController()
-            # ManualVolumeController()
         )
 
     threads = [Thread(target=x.run) for x in jobs]

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import json
+from abc import abstractmethod
 from datetime import date, timedelta, datetime, time
 
 import requests
@@ -53,22 +54,31 @@ class StationController(RadioItem):
         pass
 
 
-class VolumeController(RadioItem):
-    CODE = "volume_ctrl"
-    EVENT_VOLUME_UP = "volume_up"
-    EVENT_VOLUME_DOWN = "volume_down"
-    EVENT_VOLUME_MUTE = "volume_mute"
-    EVENT_VOLUME_UNMUTE = "volume_unmute"
+class AbstractVolumeController(RadioItem):
+    EVENT_VOLUME = "volume"
     DELTA = 3
 
-    def __init__(self, pin_left, pin_right, pin_click):
-        super(VolumeController, self).__init__(Bus(VOLUME_CONTROLLER_LOG, VolumeController.CODE))
-        self.encoder = RotaryEncoder(pin_left, pin_right, self.rotated)
-        self.button = RotaryButton(pin_click, self.clicked)
-        self.mixer = Mixer()
+    def __init__(self, code):
+        super(AbstractVolumeController, self).__init__(Bus(VOLUME_CONTROLLER_LOG, code))
+
+    @abstractmethod
+    def get_volume(self):
+        pass
+
+    @abstractmethod
+    def set_volume(self, volume):
+        pass
+
+    @abstractmethod
+    def get_mute(self):
+        pass
+
+    @abstractmethod
+    def set_mute(self, mute):
+        pass
 
     def calculate_volume(self, delta):
-        volume = self.mixer.getvolume()[0]
+        volume = self.get_volume()
         if 0 <= volume + delta <= 100:
             return volume + delta
         elif volume + delta < 0:
@@ -77,43 +87,65 @@ class VolumeController(RadioItem):
             return 100
 
     def rotated(self, direction):
-        status = VolumeStatus(self.mixer.getvolume()[0], self.mixer.getmute()[0])
+        status = VolumeStatus(self.get_volume(), self.get_mute())
 
         if direction == RotaryEncoder.DIRECTION_RIGHT:
             new_status = VolumeStatus(self.calculate_volume(VolumeController.DELTA), 0)
             if status.volume == 0:
                 new_status.is_muted = 0
-            self.bus.send_manager_event(VolumeController.EVENT_VOLUME_UP, VolumeEvent(status, new_status))
+            self.bus.send_manager_event(VolumeController.EVENT_VOLUME, VolumeEvent(status, new_status))
         else:
             new_status = VolumeStatus(self.calculate_volume(-VolumeController.DELTA), 0)
             if new_status.volume == 0:
                 new_status.is_muted = 1
-            self.bus.send_manager_event(VolumeController.EVENT_VOLUME_DOWN, VolumeEvent(status, new_status))
+            self.bus.send_manager_event(VolumeController.EVENT_VOLUME, VolumeEvent(status, new_status))
 
-        self.mixer.setvolume(new_status.volume)
+        self.set_volume(new_status.volume)
         if status.is_muted != new_status.is_muted:
-            self.mixer.setmute(new_status.is_muted)
+            self.set_mute(new_status.is_muted)
 
     def clicked(self):
-        status = VolumeStatus(self.mixer.getvolume()[0], self.mixer.getmute()[0])
+        status = VolumeStatus(self.get_volume(), self.get_mute())
         new_status = VolumeStatus(status.volume, (status.is_muted + 1) % 2)
         if new_status.is_muted:
-            self.bus.send_manager_event(VolumeController.EVENT_VOLUME_MUTE, VolumeEvent(status, new_status))
+            self.bus.send_manager_event(VolumeController.EVENT_VOLUME, VolumeEvent(status, new_status))
         else:
             # if unmute when volume is 0
             if new_status.volume == 0:
                 # then set minimal volume:
                 new_status.volume = VolumeController.DELTA
-            self.bus.send_manager_event(VolumeController.EVENT_VOLUME_UNMUTE, VolumeEvent(status, new_status))
-        self.mixer.setmute(new_status.is_muted)
+            self.bus.send_manager_event(VolumeController.EVENT_VOLUME, VolumeEvent(status, new_status))
+        self.set_mute(new_status.is_muted)
         if status.volume != new_status.volume:
-            self.mixer.setvolume(new_status.volume)
+            self.set_volume(new_status.volume)
 
     def loop(self):
         pass
 
     def exit(self):
         pass
+
+
+class VolumeController(AbstractVolumeController):
+    CODE = "volume_ctrl"
+
+    def __init__(self, pin_left, pin_right, pin_click):
+        super(VolumeController, self).__init__(VolumeController.CODE)
+        self.encoder = RotaryEncoder(pin_left, pin_right, self.rotated)
+        self.button = RotaryButton(pin_click, self.clicked)
+        self.mixer = Mixer()
+
+    def get_volume(self):
+        return self.mixer.getvolume()[0]
+
+    def set_volume(self, volume):
+        self.mixer.setvolume(volume)
+
+    def get_mute(self):
+        return self.mixer.getmute()[0]
+
+    def set_mute(self, mute):
+        self.mixer.setmute(mute)
 
 
 class RecognizeController(RadioItem):
@@ -198,9 +230,9 @@ class AccuweatherController(RadioItem):
     def __init__(self):
         super(AccuweatherController, self).__init__(Bus(ACCUWEATHER_CONTROLLER_LOG, AccuweatherController.CODE), 2)
         self.last_event: WeatherEvent = None
-        self.last_call:int = None
+        self.last_call: int = None
         self.period = 60 * 60 * 1_000
-        #self.period = 30 * 1_000
+        # self.period = 30 * 1_000
 
     def loop(self):
         try:
