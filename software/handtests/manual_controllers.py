@@ -65,20 +65,6 @@ class KeyboardController(RadioItem):
 class ManualVolumeController(AbstractVolumeController):
     def __init__(self):
         super(ManualVolumeController, self).__init__(VolumeController.CODE)
-        self.mixer = Mixer()
-
-    def get_volume(self):
-        return self.mixer.getvolume()[0]
-
-    def set_volume(self, volume):
-        self.mixer.setvolume(volume)
-
-    def get_mute(self):
-        return self.mixer.getmute()[0]
-
-    def set_mute(self, mute):
-        self.mixer.setmute(mute)
-
 
 class ManualDisplay(RadioItem):
     CODE = Display.CODE
