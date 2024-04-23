@@ -233,3 +233,30 @@ def create_astro_strip(width: int, height: int, astro_data: AstroData) -> Image:
     result.paste(first_frame, (5*width, 0))
 
     return result
+
+
+def __volume__(width: int, height: int, volume: int, fill):
+    result = Image.new('L', (width, height), fill)
+    draw = ImageDraw.Draw(result)
+
+    draw.polygon([(0, height-1), (width-1, height-1), (width-1, 0)], outline=C_WHITE-5, fill=C_BLACK+6)
+    x = round((width*volume)/100)
+    y = round((height*(100-volume))/100)
+    draw.polygon([(0, height-1), (x-1, height-1), (x-1, y)], fill=C_WHITE)
+
+    return result
+
+
+def volume_window(width: int, height: int, volume: int, fill=C_BLACK, margin=3, mute=False):
+    result = Image.new('L', (width, height), C_BLACK)
+    draw = ImageDraw.Draw(result)
+
+    draw.rounded_rectangle([(0, 0), (width - 1, height - 1)], outline=C_WHITE, width=1, radius=3, fill=fill)
+    if mute:
+        img = Image.open(Assets.mute)
+    else:
+        img = Image.open(Assets.speaker)#.convert('L')
+    result.paste(__volume__(width - 2*margin, height - 2*margin, volume, fill), (margin, margin))
+    result.paste(img, (2, 2))
+    return result
+

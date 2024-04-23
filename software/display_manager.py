@@ -3,15 +3,12 @@ import os
 import sys
 import time
 from abc import ABC, abstractmethod
-from functools import cache
-
 import drawing
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
-from assets import Assets
 from configuration import SPLASH_SCREEN_DISPLAY, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
-from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, time_f, VolumeEvent
-from PIL import Image, ImageDraw, ImageEnhance
+from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, VolumeEvent
+from PIL import Image, ImageDraw
 
 
 class ShortLifeWindow(ABC):
@@ -59,13 +56,12 @@ class VolumeWindow(ShortLifeWindow):
     def __init__(self, volume: VolumeEvent, width: int):
         super(VolumeWindow, self).__init__(width=width)
         self.volume = volume
-        self.text = ["Volume Event TODO"]
 
     def is_completed(self) -> bool:
         return self.is_life_span_passed()
 
     def draw(self) -> Image:
-        return drawing.text_window(self.width, tuple(self.text), tuple([36]))
+        return drawing.volume_window(self.width, 40, self.volume.current_status.volume, mute=self.volume.current_status.is_muted)
 
 
 class RecognizeWindow(ShortLifeWindow):

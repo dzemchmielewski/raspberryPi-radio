@@ -18,6 +18,9 @@ class Assets:
     moonrise = os.path.join(assets_dir, 'sunmoon/moonrise-start.png_converted')
     moonset = os.path.join(assets_dir, 'sunmoon/moonset-start.png_converted')
 
+    speaker = os.path.join(assets_dir, 'speaker/speaker.bmp_converted')
+    mute = os.path.join(assets_dir, 'speaker/mute.bmp_converted')
+
     font_oled = ImageFont.truetype(font_path, 8)
 
     mainfont_0 = ImageFont.truetype(font_m5x7_path, 8)
