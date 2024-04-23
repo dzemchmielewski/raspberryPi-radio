@@ -164,9 +164,9 @@ class AstroController(RadioItem):
 
             for day in response["days"]:
                 data = AstroData(datetime.strptime(day["datetime"], "%Y-%m-%d").date(),
-                                 self.pt(day["sunrise"]), self.pt(day["sunset"]),
-                                 self.pt(day["moonrise"]), self.pt(day["moonset"]),
-                                 day["moonphase"])
+                                 self.pt(day.get("sunrise", None)), self.pt(day.get("sunset", None)),
+                                 self.pt(day.get("moonrise", None)), self.pt(day.get("moonset", None)),
+                                 day.get("moonphase", None))
                 self.bus.set(day["datetime"], data)
             self.bus.log("External call completed (" + str(len(response["days"])) + " datasets saved).")
 
