@@ -170,6 +170,10 @@ class MainWindow:
         y = round((((self.y_middle - self.start_y) - q1.size[1]) / 2))
         result.paste(q1, (self.start_x, y))
 
+        q2 = self.q2()
+        y = round((((self.y_middle - self.start_y) - q2.size[1]) / 2))
+        result.paste(q2, (self.x_up + 1, y))
+
         q3 = self.q3()
         y = round((((self.y_middle - self.start_y) - q3.size[1]) / 2))
         result.paste(q3, (self.start_x, y + self.y_middle + 2))
@@ -186,6 +190,11 @@ class MainWindow:
         text = [drawing.display_week_day(now.weekday()) + ", " + str(now.day), drawing.display_month(now.month)]
         return drawing.text_window(self.x_up - self.start_x, tuple(text), tuple([16, 34]), is_frame=False, vertical_space=2,
                                    fill=drawing.C_BLACK)
+
+    def q2(self):
+        # Quarter 2 - display weather
+        # frame max size: 50x42
+        return drawing.text_window(self.end_x - self.x_up, tuple(["todo"]), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
 
     def q3(self):
         # Quarter 3 - astrological information
@@ -242,10 +251,7 @@ class DisplayManager:
 
         main = Image.new('L', (self.width, self.height), 0)
         main.paste(drawing.top_bar2(self.width, 13, station=self.station), (0, 0))
-        # main.paste(self.creator.time(self.width), (0, 30))
         main.paste(self.main_window.draw(), (0, 13))
-
-        # main.paste(self.astro_window.draw(), (0, 78))
 
         for w in self.windows:
             window_image = w.draw()

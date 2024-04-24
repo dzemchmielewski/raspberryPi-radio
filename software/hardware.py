@@ -57,7 +57,8 @@ class RotaryEncoder:
         self.rightPin.when_activated = self.right_changed
         self.rightPin.when_deactivated = self.right_changed
 
-    def swap(self, char):
+    @staticmethod
+    def swap(char):
         if char == '1':
             return '0'
         else:  # char == '0'

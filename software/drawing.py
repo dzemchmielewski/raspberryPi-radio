@@ -216,7 +216,7 @@ def create_astro_strip(width: int, height: int, astro_data: AstroData) -> Image:
         result.paste(img, (i * img.size[0], 0))
         time_img = text_window(width, tuple([text[i]]), tuple([20]), vertical_space=5, horizontal_space=0, is_frame=False,
                                font_path=Assets.font_path)
-        result.paste(time_img, ((i*width) + round((width - time_img.size[0]) / 2), img.size[1] + 1))
+        result.paste(time_img, ((i * width) + round((width - time_img.size[0]) / 2), img.size[1] + 1))
 
     # Moon phase:
     if astro_data is None:
@@ -225,12 +225,12 @@ def create_astro_strip(width: int, height: int, astro_data: AstroData) -> Image:
         phase = str(astro_data.moon_phase) + "%"
 
     phase_img = text_window(width, tuple([phase]), tuple([20]), vertical_space=2, horizontal_space=0, is_frame=False,
-                               font_path=Assets.font_path)
-    result.paste(phase_img, ((4*width) + round((width - phase_img.size[0]) / 2), 0))
+                            font_path=Assets.font_path)
+    result.paste(phase_img, ((4 * width) + round((width - phase_img.size[0]) / 2), 0))
 
     # Repeat first frame at the end:
-    first_frame = result.crop([0,0, width, height])
-    result.paste(first_frame, (5*width, 0))
+    first_frame = result.crop([0, 0, width, height])
+    result.paste(first_frame, (5 * width, 0))
 
     return result
 
@@ -239,14 +239,15 @@ def __volume__(width: int, height: int, volume: int, fill):
     result = Image.new('L', (width, height), fill)
     draw = ImageDraw.Draw(result)
 
-    draw.polygon([(0, height-1), (width-1, height-1), (width-1, 0)], outline=C_WHITE-5, fill=C_BLACK+6)
-    x = round((width*volume)/100)
-    y = round((height*(100-volume))/100)
-    draw.polygon([(0, height-1), (x-1, height-1), (x-1, y)], fill=C_WHITE)
+    draw.polygon([(0, height - 1), (width - 1, height - 1), (width - 1, 0)], outline=C_WHITE - 5, fill=C_BLACK + 6)
+    x = round((width * volume) / 100)
+    y = round((height * (100 - volume)) / 100)
+    draw.polygon([(0, height - 1), (x - 1, height - 1), (x - 1, y)], fill=C_WHITE)
 
     return result
 
 
+@cache
 def volume_window(width: int, height: int, volume: int, fill=C_BLACK, margin=3, mute=False):
     result = Image.new('L', (width, height), C_BLACK)
     draw = ImageDraw.Draw(result)
@@ -255,8 +256,7 @@ def volume_window(width: int, height: int, volume: int, fill=C_BLACK, margin=3, 
     if mute:
         img = Image.open(Assets.mute)
     else:
-        img = Image.open(Assets.speaker)#.convert('L')
-    result.paste(__volume__(width - 2*margin, height - 2*margin, volume, fill), (margin, margin))
+        img = Image.open(Assets.speaker)  # .convert('L')
+    result.paste(__volume__(width - 2 * margin, height - 2 * margin, volume, fill), (margin, margin))
     result.paste(img, (2, 2))
     return result
-
