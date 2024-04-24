@@ -148,5 +148,6 @@ class RadioItem(ABC):
         while self.bus.consume_event(EVENT_EXIT) is None:
             self.loop()
             sleep(self.loop_sleep)
+        self.bus.exit()
         self.exit()
         self.bus.log("EXIT")

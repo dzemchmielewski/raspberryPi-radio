@@ -37,7 +37,8 @@ class KeyboardController(RadioItem):
                 print("Unrecognized action!")
 
     def exit(self):
-        pass
+        self.volume_ctrl.bus.exit()
+        self.station_ctrl.bus.exit()
 
 
 class ManualStationController(AbstractStationController):

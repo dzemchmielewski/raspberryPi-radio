@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import os.path
 import platform
 
 from entities import Station
@@ -21,6 +22,9 @@ STATIONS = (
 )
 
 RT_CURRENT_STATION = "rt/current_station"
+CACHE_PERSISTENCE_DIR = "persist/"
+if not os.path.isdir(CACHE_PERSISTENCE_DIR):
+    os.mkdir(CACHE_PERSISTENCE_DIR)
 
 RE2_LEFT_PIN = 20
 RE2_RIGHT_PIN = 21

@@ -1,8 +1,11 @@
 #!/usr/bin/python
-
+import os.path
 from datetime import datetime
+
+import dill
 import pylibmc
 
+from configuration import CACHE_PERSISTENCE_DIR
 from entities import RADIO_MANAGER_CODE
 
 
@@ -16,9 +19,20 @@ class Bus:
                                             "ketama": True})
         self.pool = pylibmc.ThreadMappedPool(self.mc)
         self.debug = True
+        self.persist = {}
+        if os.path.isfile(CACHE_PERSISTENCE_DIR + self.code):
+            with open(CACHE_PERSISTENCE_DIR + self.code, 'rb') as f:
+                self.persist = dill.load(f)
+            self.log("Loaded keys (" + self.code + "):" + str(self.persist))
 
     def __del__(self):
         self.pool.relinquish()
+
+    def exit(self):
+        if len(self.persist) > 0:
+            with open(CACHE_PERSISTENCE_DIR + self.code, 'wb') as f:
+                dill.dump(self.persist, f)
+            self.log("Persisted keys (" + self.code + "):" + str(self.persist))
 
     def log(self, msg, now=None):
         if now is None:
@@ -26,20 +40,10 @@ class Bus:
         print("[" + "{:%Y-%m-%d %H:%M:%S.%f}".format(now) + "][" + self.logname + "] " + msg)
 
     def get(self, name):
-        with self.pool.reserve() as mc:
-            return mc.get(self.code + "/" + name)
-
-    # def getBool(self, name):
-    #     value = self.mc.get(self.code + "/" + name)
-    #     if str(value).lower() in ("yes", "y", "true",  "t", "1"):
-    #         return True
-    #     if str(value).lower() in ("no",  "n", "false", "f", "0", "0.0", "", "none", "[]", "{}"):
-    #         return False
-    #     raise Exception('Invalid value for boolean conversion: ' + str(value))
+        return self.persist.get(name, None)
 
     def set(self, name, value):
-        with self.pool.reserve() as mc:
-            mc.set(self.code + "/" + name, value)
+        self.persist[name] = value
 
     def consume_event(self, name):
         event_key = self.code + "/event/" + name
@@ -71,5 +75,3 @@ class Bus:
             return mc.get(name)
 
 
-#    def get_external(self, external_code, name):
-#       return self.mc.get(external_code + "/" + name)
