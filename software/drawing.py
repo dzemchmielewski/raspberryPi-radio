@@ -302,7 +302,8 @@ def _moon_phase(width: int, height: int, phase: float):
 @cache
 def moon_phase(width: int, height: int, phase: float):
     result = Image.new('L', (width, height), C_BLACK)
-    draw = ImageDraw.Draw(result)
+    if phase is None:
+        return result
 
     moon_phase_height = round(height - ((4/10) * height))
     if phase is not None:
@@ -320,8 +321,8 @@ def moon_phase(width: int, height: int, phase: float):
 
 
 # if __name__ == "__main__":
-#     image = moon_phase(38, 40, float(sys.argv[1]))
-#     image = moon_phase(38, 40, float(sys.argv[1]))
+#     #     image = moon_phase(38, 40, float(sys.argv[1]))
+#     image = moon_phase(38, 40, None)
 #     image = image.point(lambda p: p * 16)
 #     # image.show()
 #     image.save("out.bmp")
