@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from functools import cache
 from operator import itemgetter
@@ -219,18 +220,15 @@ def create_astro_strip(width: int, height: int, astro_data: AstroData) -> Image:
         result.paste(time_img, ((i * width) + round((width - time_img.size[0]) / 2), img.size[1] + 1))
 
     # Moon phase:
-    if astro_data is None:
-        phase = "..."
-    else:
-        phase = str(astro_data.moon_phase) + "%"
-
-    phase_img = text_window(width, tuple([phase]), tuple([20]), vertical_space=2, horizontal_space=0, is_frame=False,
-                            font_path=Assets.font_path)
+    phase_img = moon_phase(width, height, astro_data.moon_phase if astro_data is not None else None)
     result.paste(phase_img, ((4 * width) + round((width - phase_img.size[0]) / 2), 0))
 
     # Repeat first frame at the end:
     first_frame = result.crop([0, 0, width, height])
     result.paste(first_frame, (5 * width, 0))
+
+    # image = result.point(lambda p: p * 16)
+    # image.save("out2.bmp")
 
     return result
 
@@ -260,3 +258,70 @@ def volume_window(width: int, height: int, volume: int, fill=C_BLACK, margin=3, 
     result.paste(__volume__(width - 2 * margin, height - 2 * margin, volume, fill), (margin, margin))
     result.paste(img, (2, 2))
     return result
+
+
+@cache
+def _moon_phase(width: int, height: int, phase: float):
+    result = Image.new('L', (width, height), C_BLACK)
+    draw = ImageDraw.Draw(result)
+    radius = round((min(width, height) - 2) / 2)
+    x = round(width / 2)
+    y = round(height / 2)
+
+    # draw full moon:
+    draw.ellipse([x - radius, y - radius, x + radius, y + radius], fill=C_WHITE - 6)
+
+    # phase:
+    # 0 - new moon, 0.25 - 1st qrt, 0.5 - full moon,  0.75 - 2nd qrt, 1 (or 0) - new moon
+    # we have to scale phase to -2.0 ... 2.0, where:
+    # -2.0  - full moon, -1.0 - 1st qrt, 0 - new moon, 1.0 - 2nd qrt, 2.0 (or -2.0) - full moon
+    a = -((((phase + 0.5) % 1) * 4) - 2)
+    # and that way find the middle of the earth shadow circle:
+    x = x + a * radius
+
+    # make a radius a little bit smaller, when around the full moon, so the new moon is somehow visible:
+    # m_max - percentage of maximum radius difference
+    # let's say it is 5%
+    m_max = 5
+
+    # margin - percentage of radius difference, depending on moon phase:
+    # - for the full moon the margin is zero,
+    # - margin raises up to m_max until the new moon
+    # - then margin decreases to 0 until the full moon again
+    margin = m_max - (m_max - round(((abs((phase * 2) - 1)) * m_max)))
+
+    # calculate the radius of the earth shadow:
+    radius = radius - (radius * (margin / 100))
+
+    # and finally draw earth shadow:
+    draw.ellipse([x - radius, y - radius, x + radius, y + radius], fill=C_BLACK)
+
+    return result
+
+
+@cache
+def moon_phase(width: int, height: int, phase: float):
+    result = Image.new('L', (width, height), C_BLACK)
+    draw = ImageDraw.Draw(result)
+
+    moon_phase_height = round(height - ((4/10) * height))
+    if phase is not None:
+        result.paste(_moon_phase(width, moon_phase_height, phase), (0,0))
+
+    text = str(round(100*(1 - (2 * abs(phase - 0.5)))))
+    moon_text_img = text_window(width, tuple([text + "%"]), tuple([14]), vertical_space=2, horizontal_space=0, is_frame=False,
+                            font_path=Assets.font_path)
+
+    result.paste(moon_text_img, (
+        round((width - moon_text_img.size[0]) / 2),
+        moon_phase_height + round((height - moon_phase_height - moon_text_img.size[1]) / 2)))
+
+    return result
+
+
+# if __name__ == "__main__":
+#     image = moon_phase(38, 40, float(sys.argv[1]))
+#     image = moon_phase(38, 40, float(sys.argv[1]))
+#     image = image.point(lambda p: p * 16)
+#     # image.show()
+#     image.save("out.bmp")
