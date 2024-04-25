@@ -112,6 +112,7 @@ class AstroWindow:
     def __init__(self):
         self.astro_data = None
         self.in_movement = False
+        self.move_step = 8
         self.position = 0
         self.last_stop = now()
         self.stop_time = 2 * 1_000
@@ -127,7 +128,13 @@ class AstroWindow:
             if self.position + width == strip.size[0]:
                 self.position = 0
 
-            self.position += 1
+            next_move_step = self.move_step
+            for i in range(0, self.move_step):
+                if (self.position + (i + 1)) % width == 0:
+                    next_move_step = i + 1
+                    break
+            self.position += next_move_step
+
             if self.position % width == 0:
                 self.in_movement = False
                 self.last_stop = now()

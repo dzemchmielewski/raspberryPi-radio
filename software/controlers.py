@@ -69,6 +69,7 @@ class AbstractVolumeController(RadioItem):
             return 100
 
     def rotated(self, direction):
+        #self.bus.log("ROTATION: {}, mixer: {} ({})".format(direction, self.mixer.getvolume()[0], self.mixer.getmute()[0]))
         status = VolumeStatus(self.mixer.getvolume()[0], self.mixer.getmute()[0])
 
         if direction == RotaryEncoder.DIRECTION_RIGHT:
@@ -87,6 +88,7 @@ class AbstractVolumeController(RadioItem):
             self.mixer.setmute(new_status.is_muted)
 
     def clicked(self):
+        #self.bus.log("CLICKED, mixer: {} ({})".format(self.mixer.getvolume()[0], self.mixer.getmute()[0]))
         status = VolumeStatus(self.mixer.getvolume()[0], self.mixer.getmute()[0])
         new_status = VolumeStatus(status.volume, (status.is_muted + 1) % 2)
         if new_status.is_muted:
@@ -191,6 +193,7 @@ class AstroController(RadioItem):
                 self.call4data(event)
                 astro_data = self.bus.get(requested_day)
             self.bus.send_manager_event(AstroController.EVENT_ASTRO_DATA, astro_data)
+        #TODO: clean outdated astro information
 
     def exit(self):
         pass

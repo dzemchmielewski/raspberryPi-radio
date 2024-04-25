@@ -53,7 +53,7 @@ if __name__ == "__main__":
             Tuner(),
             TunerStatusLED(LED_RED_PIN),
             VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
-            StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN),
+            StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN),
             RecognizeController(BTN2_PIN),
             AstroController(),
             Display(0.1),
