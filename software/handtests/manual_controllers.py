@@ -78,6 +78,9 @@ class ManualDisplay(RadioItem):
                 self.last_astro_req_sent = now()
                 self.bus.send_manager_event(Display.EVENT_REQUIRE_ASTRO_DATA, astro_date)
 
+        if (event := self.bus.consume_event(Display.EVENT_SCREENSAVER)) is not None:
+            self.manager.screensaver(event)
+
         image = self.manager.display()
         image = image.point(lambda p: p * 16)
         image.save("out.bmp")

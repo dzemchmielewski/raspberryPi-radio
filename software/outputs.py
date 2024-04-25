@@ -129,6 +129,7 @@ class Display(RadioItem):
     EVENT_RECOGNIZE_STATUS = "recognize"
     EVENT_ASTRO_DATA = "astro"
     EVENT_REQUIRE_ASTRO_DATA = "astro_req"
+    EVENT_SCREENSAVER = "screensaver"
 
     def __init__(self, loop_sleep=None):
         super(Display, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
@@ -157,5 +158,8 @@ class Display(RadioItem):
             if self.last_astro_req_sent is None or (now() > self.last_astro_req_sent + 60 * 1_000):
                 self.last_astro_req_sent = now()
                 self.bus.send_manager_event(Display.EVENT_REQUIRE_ASTRO_DATA, astro_date)
+
+        if (event := self.bus.consume_event(Display.EVENT_SCREENSAVER)) is not None:
+            self.manager.screensaver(event)
 
         self.oled.ShowImage(self.oled.getbuffer(self.manager.display()))

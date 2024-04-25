@@ -4,7 +4,7 @@ from threading import Thread
 from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
     LED_RED_PIN, FULL_LOAD, BTN2_PIN
-from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG
+from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
 from controlers import StationController, VolumeController, RecognizeController, AstroController
 from handtests.manual_controllers import KeyboardController, ManualDisplay
 from outputs import Tuner, TunerStatusLED, Display
@@ -15,6 +15,10 @@ class RadioManager(RadioItem):
     def __init__(self, loop_sleep=None):
         super(RadioManager, self).__init__(Bus(RADIO_LOG, RADIO_MANAGER_CODE), loop_sleep=loop_sleep)
         self.current_station = None
+        self.last_event = now()
+        self.screensaver_activation_time = 5 * 60 * 1_000
+        # self.screensaver_activation_time = 15 * 1_000
+        self.is_screensaver = False
 
     def exit(self):
         pass
@@ -25,23 +29,37 @@ class RadioManager(RadioItem):
             self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
+            self.last_event = now()
 
         if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
+            self.last_event = now()
 
         if (event := self.bus.consume_event(Tuner.EVENT_PLAY_STATUS)) is not None:
             self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(event, STATIONS[self.current_station]))
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(event, STATIONS[self.current_station]))
+            self.last_event = now()
 
         if self.bus.consume_event(RecognizeController.EVENT_RECOGNIZE) is not None:
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_RECOGNIZE, True)
+            self.last_event = now()
         if (event := self.bus.consume_event(Tuner.EVENT_RECOGNIZE_STATUS)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_RECOGNIZE_STATUS, event)
+            self.last_event = now()
 
         if (event := self.bus.consume_event(AstroController.EVENT_ASTRO_DATA)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_ASTRO_DATA, event)
         if (event := self.bus.consume_event(Display.EVENT_REQUIRE_ASTRO_DATA)) is not None:
             self.bus.send_event(AstroController.CODE, AstroController.EVENT_ASTRO_DATA_REQUEST, event)
+
+        if self.is_screensaver:
+            if self.last_event + self.screensaver_activation_time > now():
+                self.bus.send_event(Display.CODE, Display.EVENT_SCREENSAVER, False)
+                self.is_screensaver = False
+        else:
+            if self.last_event + self.screensaver_activation_time < now():
+                self.bus.send_event(Display.CODE, Display.EVENT_SCREENSAVER, True)
+                self.is_screensaver = True
 
 
 if __name__ == "__main__":

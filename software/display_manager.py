@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from abc import ABC, abstractmethod
+
 import drawing
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
@@ -142,6 +143,19 @@ class AstroWindow:
         return strip.crop([self.position, 0, self.position + width, height])
 
 
+class Screensaver:
+
+    def __init__(self, width: int, height: int):
+        self.width = width
+        self.height = height
+        self.position = 0
+
+    def draw(self, image: Image):
+        # TODO: make some fancy screensaver
+        draw = ImageDraw.Draw(image)
+        draw.rectangle(((0, 0), (image.size[0] - 1, image.size[1] - 1)), fill=drawing.C_BLACK)
+
+
 class MainWindow:
     def __init__(self, width: int, height: int, astro_window: AstroWindow):
         self.astro_window = astro_window
@@ -158,7 +172,7 @@ class MainWindow:
         self.x_up = round((6 / 10) * self.width)
         # lower space split: 30% | 70%
         self.x_low = round((3 / 10) * self.width)
-        # split horizontaly in half
+        # split horizontally in half
         self.y_middle = round(self.height / 2)
 
     def draw(self, margin=8):
@@ -201,7 +215,7 @@ class MainWindow:
     def q2(self):
         # Quarter 2 - display weather
         # frame max size: 50x42
-        return drawing.text_window(self.end_x - self.x_up, tuple(["todo"]), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
+        return drawing.text_window(self.end_x - self.x_up, tuple([" "]), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
 
     def q3(self):
         # Quarter 3 - astrological information
@@ -222,6 +236,7 @@ class DisplayManager:
         self.windows = []
         self.station = None
         self.astro_window = AstroWindow()
+        self.screensaver_window = None
         self.main_window = MainWindow(width, height - 13, self.astro_window)
 
     def volume(self, event):
@@ -236,6 +251,12 @@ class DisplayManager:
 
     def astro(self, event: AstroData):
         self.astro_window.astro_data = event
+
+    def screensaver(self, event: bool):
+        if event:
+            self.screensaver_window = Screensaver(self.width, self.height)
+        else:
+            self.screensaver_window = None
 
     def new_astro(self):
         today = datetime.date.today()
@@ -265,6 +286,9 @@ class DisplayManager:
             x = round((self.width - window_image.size[0]) / 2)
             y = round((self.height - window_image.size[1]) / 2)
             main.paste(window_image, (x, y))
+
+        if self.screensaver_window is not None:
+            self.screensaver_window.draw(main)
 
         return main
 
