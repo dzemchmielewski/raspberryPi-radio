@@ -6,8 +6,8 @@ from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, 
     LED_RED_PIN, FULL_LOAD, BTN2_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
 from controlers import StationController, VolumeController, RecognizeController, AstroController
-from handtests.manual_controllers import KeyboardController, ManualDisplay
-from outputs import Tuner, TunerStatusLED, Display
+from handtests.manual_controllers import KeyboardController
+from outputs import Tuner, TunerStatusLED, Display, OLEDDisplay, FileOutputDisplay
 
 
 class RadioManager(RadioItem):
@@ -74,14 +74,14 @@ if __name__ == "__main__":
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN),
             RecognizeController(BTN2_PIN),
             AstroController(),
-            Display(0.1),
+            OLEDDisplay(0.1),
             # AccuweatherController()
         )
     else:
         jobs = (
             Tuner(),
             KeyboardController(),
-            ManualDisplay(0.1),
+            FileOutputDisplay(0.1),
             AstroController(),
             # AccuweatherController()
         )

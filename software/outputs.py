@@ -44,10 +44,10 @@ class Tuner(RadioItem):
     def __recognize__(self, station: Station):
         self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.CONNECTING, station))
         try:
-            headers={"User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7"}
-            request=urllib.request.Request(station.url, None, headers)
+            headers = {"User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7"}
+            request = urllib.request.Request(station.url, None, headers)
             stream = urllib.request.urlopen(request)
-            #stream = urlopen(station.url)
+            # stream = urlopen(station.url)
 
             begin = datetime.now()
             duration = timedelta(milliseconds=AUDD_CLIP_DURATION)
@@ -70,11 +70,13 @@ class Tuner(RadioItem):
 
         except requests.exceptions.RequestException as e:
             self.bus.log("Error querying AudD: " + str(e))
-            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.DONE, station, json.loads("{\"status\":\"error\"}")))
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS,
+                                        RecognizeStatus(RecognizeState.DONE, station, json.loads("{\"status\":\"error\"}")))
 
         except urllib.error.HTTPError as e:
             self.bus.log("Error opening stream (" + station.url + "): " + str(e))
-            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.DONE, station, json.loads("{\"status\":\"error\"}")))
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS,
+                                        RecognizeStatus(RecognizeState.DONE, station, json.loads("{\"status\":\"error\"}")))
 
     def loop(self):
         if (station := self.bus.consume_event(Tuner.EVENT_STATION)) is not None:
@@ -133,15 +135,8 @@ class Display(RadioItem):
 
     def __init__(self, loop_sleep=None):
         super(Display, self).__init__(Bus(DISPLAY_OUTPUT_LOG, Display.CODE), loop_sleep=loop_sleep)
-        self.oled = OLED_1in32.OLED_1in32()
-        self.oled.Init()
-        self.oled.clear()
         self.last_astro_req_sent = None
         self.manager = DisplayManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
-
-    def exit(self):
-        self.oled.clear()
-        self.oled.module_exit()
 
     def loop(self):
         if (event := self.bus.consume_event(Display.EVENT_VOLUME)) is not None:
@@ -162,4 +157,33 @@ class Display(RadioItem):
         if (event := self.bus.consume_event(Display.EVENT_SCREENSAVER)) is not None:
             self.manager.screensaver(event)
 
+
+class OLEDDisplay(Display):
+    def __init__(self, loop_sleep=None):
+        super(OLEDDisplay, self).__init__(loop_sleep=loop_sleep)
+        self.oled = OLED_1in32.OLED_1in32()
+        self.oled.Init()
+        self.oled.clear()
+
+    def exit(self):
+        self.oled.clear()
+        self.oled.module_exit()
+
+    def loop(self):
+        super(OLEDDisplay, self).loop()
         self.oled.ShowImage(self.oled.getbuffer(self.manager.display()))
+
+
+class FileOutputDisplay(Display):
+
+    def __init__(self, loop_sleep=None):
+        super(FileOutputDisplay, self).__init__(loop_sleep=loop_sleep)
+
+    def exit(self):
+        pass
+
+    def loop(self):
+        super(FileOutputDisplay, self).loop()
+        image = self.manager.display()
+        image = image.point(lambda p: p * 16)
+        image.save("out.bmp")
