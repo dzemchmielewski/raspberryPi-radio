@@ -3,9 +3,9 @@ from threading import Thread
 
 from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
-    LED_RED_PIN, FULL_LOAD, BTN2_PIN
+    LED_RED_PIN, FULL_LOAD, BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
-from controlers import StationController, VolumeController, RecognizeController, AstroController
+from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController
 from handtests.manual_controllers import KeyboardController
 from outputs import Tuner, TunerStatusLED, Display, OLEDDisplay, FileOutputDisplay
 
@@ -16,8 +16,8 @@ class RadioManager(RadioItem):
         super(RadioManager, self).__init__(Bus(RADIO_LOG, RADIO_MANAGER_CODE), loop_sleep=loop_sleep)
         self.current_station = None
         self.last_event = now()
-        self.screensaver_activation_time = 5 * 60 * 1_000
-        # self.screensaver_activation_time = 15 * 1_000
+        # self.screensaver_activation_time = 5 * 60 * 1_000
+        self.screensaver_activation_time = 15 * 1_000
         self.is_screensaver = False
 
     def exit(self):
@@ -52,6 +52,9 @@ class RadioManager(RadioItem):
         if (event := self.bus.consume_event(Display.EVENT_REQUIRE_ASTRO_DATA)) is not None:
             self.bus.send_event(AstroController.CODE, AstroController.EVENT_ASTRO_DATA_REQUEST, event)
 
+        if self.bus.consume_event(DummyController.EVENT_DUMMY) is not None:
+            self.last_event = now()
+
         if self.is_screensaver:
             if self.last_event + self.screensaver_activation_time > now():
                 self.bus.send_event(Display.CODE, Display.EVENT_SCREENSAVER, False)
@@ -72,7 +75,8 @@ if __name__ == "__main__":
             TunerStatusLED(LED_RED_PIN),
             VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN),
-            RecognizeController(BTN2_PIN),
+            RecognizeController(RE2_CLICK_PIN),
+            DummyController(BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN),
             AstroController(),
             OLEDDisplay(0.1),
             # AccuweatherController()

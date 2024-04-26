@@ -9,7 +9,7 @@ from bus import Bus
 from configuration import STATIONS, RT_CURRENT_STATION, ACCUWEATHER_CURRENT_URL, ACCUWEATHER_FORECAST_URL, VISUALCROSSING_URL, \
     VISUALCROSSING_TOKEN
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG, \
-    ACCUWEATHER_CONTROLLER_LOG, WeatherEvent, now, AstroData, ASTRO_CONTROLLER_LOG
+    ACCUWEATHER_CONTROLLER_LOG, WeatherEvent, now, AstroData, ASTRO_CONTROLLER_LOG, DUMMY_CONTROLLER_LOG
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
@@ -194,6 +194,26 @@ class AstroController(RadioItem):
                 astro_data = self.bus.get(requested_day)
             self.bus.send_manager_event(AstroController.EVENT_ASTRO_DATA, astro_data)
         #TODO: clean outdated astro information
+
+    def exit(self):
+        pass
+
+
+class DummyController(RadioItem):
+    CODE = "dummy_ctrl"
+    EVENT_DUMMY = "dummy"
+
+    def __init__(self, *pins):
+        super(DummyController, self).__init__(Bus(DUMMY_CONTROLLER_LOG, RecognizeController.CODE))
+        self.buttons = []
+        for pin in pins:
+            self.buttons.append(Button(pin, self.clicked))
+
+    def clicked(self):
+        self.bus.send_manager_event(DummyController.EVENT_DUMMY, True)
+
+    def loop(self):
+        pass
 
     def exit(self):
         pass

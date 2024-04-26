@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from bus import Bus
-from controlers import RecognizeController, AbstractVolumeController, AbstractStationController
+from controlers import RecognizeController, AbstractVolumeController, AbstractStationController, DummyController
 from entities import RadioItem
 
 
@@ -28,7 +28,7 @@ class KeyboardController(RadioItem):
             case "r":
                 self.bus.send_manager_event(RecognizeController.EVENT_RECOGNIZE, True)
             case "ss":
-                # TODO: send screensaver event
+                self.bus.send_manager_event(DummyController.EVENT_DUMMY, True)
                 pass
             case "":
                 # do nothing
