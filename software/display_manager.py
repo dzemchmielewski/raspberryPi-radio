@@ -5,6 +5,7 @@ import time
 from abc import ABC, abstractmethod
 
 import drawing
+from assets import Assets
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from configuration import SPLASH_SCREEN_DISPLAY, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
@@ -143,6 +144,21 @@ class AstroWindow:
         return strip.crop([self.position, 0, self.position + width, height])
 
 
+class WeatherWindow:
+
+    def __init__(self):
+        pass
+
+    def draw(self, width, height) -> Image:
+        result = Image.new('L', (width, height), drawing.C_BLACK)
+
+        #img = Image.open(Assets.weather_icons + "partly-cloudy-night.png").convert('L')
+        #img.thumbnail((width, height), Image.Resampling.LANCZOS)
+
+        #result.paste(img, (round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
+        return result
+
+
 class Screensaver:
 
     def __init__(self, width: int, height: int):
@@ -157,8 +173,9 @@ class Screensaver:
 
 
 class MainWindow:
-    def __init__(self, width: int, height: int, astro_window: AstroWindow):
+    def __init__(self, width: int, height: int, astro_window: AstroWindow, weather_window: WeatherWindow):
         self.astro_window = astro_window
+        self.weather_window = weather_window
 
         self.width = width
         self.height = height
@@ -193,7 +210,7 @@ class MainWindow:
 
         q2 = self.q2()
         y = round((((self.y_middle - self.start_y) - q2.size[1]) / 2))
-        result.paste(q2, (self.x_up + 1, y))
+        result.paste(q2, (self.x_up + 1, y - 1))
 
         q3 = self.q3()
         y = round((((self.y_middle - self.start_y) - q3.size[1]) / 2))
@@ -215,7 +232,8 @@ class MainWindow:
     def q2(self):
         # Quarter 2 - display weather
         # frame max size: 50x42
-        return drawing.text_window(self.end_x - self.x_up, tuple([" "]), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
+        # return drawing.text_window(self.end_x - self.x_up, tuple([" "]), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
+        return self.weather_window.draw(50, 43)
 
     def q3(self):
         # Quarter 3 - astrological information
@@ -236,8 +254,9 @@ class DisplayManager:
         self.windows = []
         self.station = None
         self.astro_window = AstroWindow()
+        self.weather_window = WeatherWindow()
         self.screensaver_window = None
-        self.main_window = MainWindow(width, height - 13, self.astro_window)
+        self.main_window = MainWindow(width, height - 13, self.astro_window, self.weather_window)
 
     def volume(self, event):
         self.add_window(VolumeWindow(event, self.width - 10))
@@ -295,7 +314,6 @@ class DisplayManager:
 
 if __name__ == "__main__":
     manager = DisplayManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
-
     manager.splash = None
     manager.station = STATIONS[2]
     manager.astro(AstroData(

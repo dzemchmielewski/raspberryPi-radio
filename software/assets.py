@@ -34,4 +34,5 @@ class Assets:
     mainfont_8 = ImageFont.truetype(font_m5x7_path, 72)
     mainfont_9 = ImageFont.truetype(font_m5x7_path, 80)
 
+    weather_icons = os.path.join(assets_dir, 'WeatherIcons/2/')
 
