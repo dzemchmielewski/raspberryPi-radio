@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os.path
+import sys
 from datetime import datetime
 
 import dill
@@ -38,6 +39,7 @@ class Bus:
         if now is None:
             now = datetime.now()
         print("[" + "{:%Y-%m-%d %H:%M:%S.%f}".format(now) + "][" + self.logname + "] " + msg)
+        sys.stdout.flush()
 
     def get(self, name):
         return self.persist.get(name, None)

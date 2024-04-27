@@ -3,7 +3,7 @@ from threading import Thread
 
 from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
-    LED_RED_PIN, FULL_LOAD, BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN
+    FULL_LOAD, BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN, LED_GREEN_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
 from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController
 from handtests.manual_controllers import KeyboardController
@@ -16,8 +16,7 @@ class RadioManager(RadioItem):
         super(RadioManager, self).__init__(Bus(RADIO_LOG, RADIO_MANAGER_CODE), loop_sleep=loop_sleep)
         self.current_station = None
         self.last_event = now()
-        # self.screensaver_activation_time = 5 * 60 * 1_000
-        self.screensaver_activation_time = 15 * 1_000
+        self.screensaver_activation_time = 5 * 60 * 1_000
         self.is_screensaver = False
 
     def exit(self):
@@ -71,23 +70,21 @@ if __name__ == "__main__":
 
     if FULL_LOAD:
         jobs = (
+            OLEDDisplay(0.1),
             Tuner(),
-            TunerStatusLED(LED_RED_PIN),
-            VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
+            TunerStatusLED(LED_GREEN_PIN),
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN),
+            VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
             RecognizeController(RE2_CLICK_PIN),
             DummyController(BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN),
             AstroController(),
-            OLEDDisplay(0.1),
-            # AccuweatherController()
         )
     else:
         jobs = (
+            FileOutputDisplay(0.1),
             Tuner(),
             KeyboardController(),
-            FileOutputDisplay(0.1),
             AstroController(),
-            # AccuweatherController()
         )
 
     threads = [Thread(target=x.run) for x in jobs]
@@ -98,11 +95,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
     finally:
-        for i in range(len(jobs)):
+        for i in reversed(range(len(jobs))):
             if threads[i].is_alive():
                 radio.bus.send_event(jobs[i].CODE, EVENT_EXIT, True)
 
-        for i in range(len(jobs)):
+        for i in reversed(range(len(jobs))):
             if threads[i].is_alive():
                 threads[i].join()
 

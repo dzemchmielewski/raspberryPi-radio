@@ -13,7 +13,7 @@ class KeyboardController(RadioItem):
         self.station_ctrl = ManualStationController()
 
     def loop(self):
-        some_input = input(" STATION (type: up, down)  VOLUME (type: vup, vdown, vmute) SCREEN (type: ss) >> \n")
+        some_input = input(" STATION (type: up, down, r)  VOLUME (type: vup, vdown, vmute) SCREEN (type: ss) >> \n")
         match some_input:
             case "up":
                 self.station_ctrl.rotated('R')
@@ -49,3 +49,13 @@ class ManualStationController(AbstractStationController):
 class ManualVolumeController(AbstractVolumeController):
     def __init__(self):
         super(ManualVolumeController, self).__init__()
+
+
+if __name__ == "__main__":
+    try:
+        keyboard = KeyboardController()
+        keyboard.run()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        keyboard.exit()

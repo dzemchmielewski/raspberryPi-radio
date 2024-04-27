@@ -132,7 +132,7 @@ class RecognizeStatus:
 
 class RadioItem(ABC):
 
-    def __init__(self, bus, loop_sleep=0.3):
+    def __init__(self, bus, loop_sleep=0.2):
         self.bus = bus
         self.loop_sleep = loop_sleep
         self.bus.log("START (loop: " + str(self.loop_sleep) + ")")
