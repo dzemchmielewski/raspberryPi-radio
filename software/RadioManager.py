@@ -101,5 +101,9 @@ if __name__ == "__main__":
         for i in range(len(jobs)):
             if threads[i].is_alive():
                 radio.bus.send_event(jobs[i].CODE, EVENT_EXIT, True)
+
+        for i in range(len(jobs)):
+            if threads[i].is_alive():
                 threads[i].join()
+
         print("RADIO BYE")

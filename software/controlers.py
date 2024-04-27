@@ -204,7 +204,7 @@ class DummyController(RadioItem):
     EVENT_DUMMY = "dummy"
 
     def __init__(self, *pins):
-        super(DummyController, self).__init__(Bus(DUMMY_CONTROLLER_LOG, RecognizeController.CODE))
+        super(DummyController, self).__init__(Bus(DUMMY_CONTROLLER_LOG, DummyController.CODE))
         self.buttons = []
         for pin in pins:
             self.buttons.append(Button(pin, self.clicked))
