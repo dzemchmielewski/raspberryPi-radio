@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 
 import drawing
-from screensavers import FadingStars
+import screensavers
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from configuration import SPLASH_SCREEN_DISPLAY, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
@@ -259,7 +259,7 @@ class DisplayManager:
 
     def screensaver(self, event: bool):
         if event:
-            self.screensaver_window = FadingStars(self.width, self.height)
+            self.screensaver_window = screensavers.get_screensaver(self.width, self.height)
         else:
             self.screensaver_window = None
 

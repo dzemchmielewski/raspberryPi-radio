@@ -8,6 +8,10 @@ import drawing
 from assets import Assets
 
 
+def get_screensaver(width: int, height: int):
+    return Snake(width, height)
+
+
 class Screensaver:
 
     def __init__(self, width: int, height: int):
@@ -64,17 +68,54 @@ class FadingStars(Screensaver):
         return img
 
 
+class Snake(Screensaver):
+    def __init__(self, width: int, height: int, size=8):
+        super().__init__(width, height)
+        self.size = size
+        self.w = math.ceil(width / self.size)
+        self.h = math.ceil(height / self.size)
+        self.position = -1
+
+    def draw(self, img: Image) -> Image:
+        draw = ImageDraw.Draw(img)
+
+        if self.position > (self.w * self.h) + 16:
+            draw.rectangle(((0, 0), (self.width - 1, self.height - 1)), drawing.C_BLACK)
+
+        else:
+            self.position += 1
+
+            color = drawing.C_WHITE
+            for p in reversed(range(0, self.position + 1)):
+                p_x = p % self.w
+
+                if p // self.w % 2 != 0:
+                    p_x = self.w - p_x - 1
+
+                x = p_x * self.size
+                y = (p // self.w) * self.size
+                draw.rectangle(((x, y), (x + self.size, y + self.size)), color)
+                if color > drawing.C_BLACK:
+                    color -= 1
+
+        return img
+
+
 if __name__ == "__main__":
 
     # image = Image.open("test.bmp")
-    #image = Image.new('L', (1280, 960), drawing.C_BLACK + 6)
-    ss = FadingStars(128, 96)
+    # image = Image.new('L', (1280, 960), drawing.C_BLACK + 6)
+    x = 128
+    y = 96
+    # x = 100
+    # y = 100
+    ss = Snake(x, y, size=8)
 
     while True:
         # image = Image.open("test.bmp")
-        image = Image.new('L', (1280, 960), drawing.C_BLACK + 6)
+        image = Image.new('L', (x, y), drawing.C_BLACK + 6)
         image = ss.draw(image)
-        #image = image.point(lambda p: p * 16)
+        image = image.point(lambda p: p * 16)
         # image.show()
         image.save("out.bmp")
-        time.sleep(0.1)
+        time.sleep(0.2)
