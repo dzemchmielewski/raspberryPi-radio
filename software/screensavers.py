@@ -5,6 +5,7 @@ import time
 from PIL import ImageDraw, Image
 
 import drawing
+from assets import Assets
 
 
 class Screensaver:
@@ -29,8 +30,10 @@ class FadingStars(Screensaver):
         self.w = math.ceil(width / self.star_size)
         self.h = math.ceil(height / self.star_size)
         self.matrix = [(x, -1) for x in range(self.w * self.h)]
+        self.mordeczka = Image.open(Assets.mordeczka).convert('L')
 
     def draw(self, img: Image) -> Image:
+        img.paste(self.mordeczka, (0, 0))
 
         # get all possible stars that can blow up
         sample_space = list(filter(lambda x: x[1] == self.NOT_PROCESSED_YET, self.matrix))
@@ -64,14 +67,14 @@ class FadingStars(Screensaver):
 if __name__ == "__main__":
 
     # image = Image.open("test.bmp")
-    image = Image.new('L', (1280, 960), drawing.C_BLACK + 6)
-    ss = FadingStars(image.size[0], image.size[1], star_size=100)
+    #image = Image.new('L', (1280, 960), drawing.C_BLACK + 6)
+    ss = FadingStars(128, 96)
 
     while True:
         # image = Image.open("test.bmp")
         image = Image.new('L', (1280, 960), drawing.C_BLACK + 6)
         image = ss.draw(image)
-        image = image.point(lambda p: p * 16)
+        #image = image.point(lambda p: p * 16)
         # image.show()
         image.save("out.bmp")
         time.sleep(0.1)

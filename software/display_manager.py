@@ -85,10 +85,10 @@ class RecognizeWindow(ShortLifeWindow):
                 self.text = ["Ej, co to gra..?", "- nie mam pojęcia!"]
             else:  # self.status.json["status"] == "success" and self.status.json["result"] is not None
                 self.text = [
-                    self.status.json["result"]["artist"],
-                    self.status.json["result"]["title"],
-                    self.status.json["result"]["album"],
-                    self.status.json["result"]["release_date"]]
+                    self.status.json["result"].get("artist", ""),
+                    self.status.json["result"].get("title", ""),
+                    self.status.json["result"].get("album", ""),
+                    self.status.json["result"].get("release_date", "")]
 
     def is_completed(self) -> bool:
         return self.status.state == RecognizeState.DONE and self.is_life_span_passed()
