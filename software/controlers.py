@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import json
-from datetime import date, timedelta, datetime, time
+from datetime import date, timedelta, datetime
 
 import requests
 from alsaaudio import Mixer
@@ -68,7 +68,7 @@ class AbstractVolumeController(RadioItem):
             return 100
 
     def rotated(self, direction):
-        #self.bus.log("ROTATION: {}, mixer: {} ({})".format(direction, self.mixer.getvolume()[0], self.mixer.getmute()[0]))
+        # self.bus.log("ROTATION: {}, mixer: {} ({})".format(direction, self.mixer.getvolume()[0], self.mixer.getmute()[0]))
         status = VolumeStatus(self.mixer.getvolume()[0], self.mixer.getmute()[0])
 
         if direction == RotaryEncoder.DIRECTION_RIGHT:
@@ -87,7 +87,7 @@ class AbstractVolumeController(RadioItem):
             self.mixer.setmute(new_status.is_muted)
 
     def clicked(self):
-        #self.bus.log("CLICKED, mixer: {} ({})".format(self.mixer.getvolume()[0], self.mixer.getmute()[0]))
+        # self.bus.log("CLICKED, mixer: {} ({})".format(self.mixer.getvolume()[0], self.mixer.getmute()[0]))
         status = VolumeStatus(self.mixer.getvolume()[0], self.mixer.getmute()[0])
         new_status = VolumeStatus(status.volume, (status.is_muted + 1) % 2)
         if new_status.is_muted:
@@ -143,10 +143,10 @@ class RecognizeController(RadioItem):
 class AstroController(RadioItem):
     CODE = "astro_ctrl"
     EVENT_ASTRO_DATA = "astro_data"
-    EVENT_ASTRO_DATA_REQUEST = "astro_data_req"
 
     def __init__(self):
         super(AstroController, self).__init__(Bus(ASTRO_CONTROLLER_LOG, AstroController.CODE), 2)
+        self.broadcasted_for_date = None
 
     @staticmethod
     def pt(time_str):
@@ -154,10 +154,10 @@ class AstroController(RadioItem):
             return datetime.strptime(time_str, "%H:%M:%S")
         return None
 
-    def call4data(self, date: date):
+    def call4data(self, day: date):
         try:
-            d_from = (date - timedelta(days=1)).strftime("%Y-%m-%d")
-            d_to = (date + timedelta(days=5)).strftime("%Y-%m-%d")
+            d_from = (day - timedelta(days=1)).strftime("%Y-%m-%d")
+            d_to = (day + timedelta(days=5)).strftime("%Y-%m-%d")
             self.bus.log("External call: " + d_from + " - " + d_to)
 
             request = (VISUALCROSSING_URL
@@ -186,13 +186,16 @@ class AstroController(RadioItem):
             self.bus.log(str(e))
 
     def loop(self):
-        if (event := self.bus.consume_event(AstroController.EVENT_ASTRO_DATA_REQUEST)) is not None:
-            requested_day = event.strftime("%Y-%m-%d")
+        today = date.today()
+
+        if self.broadcasted_for_date is None or self.broadcasted_for_date != today:
+            requested_day = today.strftime("%Y-%m-%d")
             if (astro_data := self.bus.get(requested_day)) is None:
-                self.call4data(event)
+                self.call4data(today)
                 astro_data = self.bus.get(requested_day)
             self.bus.send_manager_event(AstroController.EVENT_ASTRO_DATA, astro_data)
-        #TODO: clean outdated astro information
+            self.broadcasted_for_date = today
+        # TODO: clean outdated astro information
 
     def exit(self):
         pass

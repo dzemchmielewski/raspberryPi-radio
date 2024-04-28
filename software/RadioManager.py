@@ -48,8 +48,6 @@ class RadioManager(RadioItem):
 
         if (event := self.bus.consume_event(AstroController.EVENT_ASTRO_DATA)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_ASTRO_DATA, event)
-        if (event := self.bus.consume_event(Display.EVENT_REQUIRE_ASTRO_DATA)) is not None:
-            self.bus.send_event(AstroController.CODE, AstroController.EVENT_ASTRO_DATA_REQUEST, event)
 
         if self.bus.consume_event(DummyController.EVENT_DUMMY) is not None:
             if self.is_screensaver:

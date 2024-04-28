@@ -160,6 +160,7 @@ class AstroWindow(SlideWindow):
 class MeteoWindow(SlideWindow):
     def __init__(self, width: int, height: int):
         super(MeteoWindow, self).__init__(width, height)
+        self.meteo_data = None
 
     def get_strip(self):
         # img = Image.open(Assets.weather_icons + "partly-cloudy-night.png").convert('L')
@@ -252,17 +253,14 @@ class DisplayManager:
     def astro(self, event: AstroData):
         self.main_window.astro_window.astro_data = event
 
+    def meteo(self, event):
+        self.main_window.meteo_window.meteo_data = event
+
     def screensaver(self, event: bool):
         if event:
             self.screensaver_window = screensavers.get_screensaver(self.width, self.height)
         else:
             self.screensaver_window = None
-
-    def new_astro(self):
-        today = datetime.date.today()
-        if self.main_window.astro_window.astro_data is None or self.main_window.astro_window.astro_data.day != today:
-            return today
-        return None
 
     def add_window(self, window):
         self.windows = [x for x in self.windows if not x.is_completed() and not isinstance(x, type(window))]
