@@ -21,7 +21,7 @@ class Screensaver:
 class FadingStars(Screensaver):
     NOT_PROCESSED_YET = -1
 
-    def __init__(self, width: int, height: int, star_size=7):
+    def __init__(self, width: int, height: int, star_size=4):
         super().__init__(width, height)
         self.max_fading_stars = 15
         self.fading_stars = []

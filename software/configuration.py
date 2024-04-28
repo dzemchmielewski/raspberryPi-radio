@@ -9,16 +9,23 @@ if platform.uname().machine == "x86_64":
     FULL_LOAD = False
 
 if FULL_LOAD:
-    SPLASH_SCREEN_DISPLAY = 2.5 * 1_000
+    SPLASH_SCREEN_DISPLAY = 2 * 1_000
 else:
     SPLASH_SCREEN_DISPLAY = 0 * 1_000
 
 STATIONS = (
     Station("Radio Nowy Swiat", "RNS", "http://stream.rcs.revma.com/ypqt40u0x1zuv"),
     Station("TOK FM", "TOKFM", "http://poznan5-4.radio.pionier.net.pl:8000/tuba10-1.mp3"),
-    Station("Los 40", "LOS40", "https://25683.live.streamtheworld.com/LOS40.mp3"),
+    Station("Los 40 Classic", "LOS40CS", "https://20133.live.streamtheworld.com/LOS40_CLASSICAAC_SC"),
     Station("Radio 357", "R357", "https://stream.radio357.pl"),
     Station("Trójka", "PR3", "http://mp3.polskieradio.pl:8904/"),
+    Station("Antyradio Classic Rock", "ANTCLA", "https://an04.cdn.eurozet.pl/ANTCLA.mp3"),
+    Station("Złote przeboje", "ZP", "https://radiostream.pl/tuba9-1.mp3"),
+    Station("Los 40", "LOS40", "https://25683.live.streamtheworld.com/LOS40.mp3"),
+    Station("Classic America", "CLASM", "https://ice3.securenetsystems.net/CLASM"),
+
+#    Station("Loca FM", "LOCFM", "http://s3.we4stream.com:8045/liv?2"),
+#    Station("", "", ""),
 )
 
 RT_CURRENT_STATION = "rt/current_station"
@@ -52,14 +59,6 @@ with open("external/AudD-api-token.txt") as fp:
 AUDD_URL = "https://api.audd.io/?api_token=" + AUDD_API_TOKEN
 AUDD_CLIP_DIRECTORY = "clips/"
 AUDD_CLIP_DURATION = 5 * 1_000
-
-
-with open("external/accuweather-api-token.txt") as fp:
-    ACCUWEATHER_TOKEN = fp.readline().strip()
-ACCUWEATHER_LOCATION_ID = "273877"
-ACCUWEATHER_FORECAST_URL="http://dataservice.accuweather.com/forecasts/v1/daily/1day/" + ACCUWEATHER_LOCATION_ID + "?apikey=" + ACCUWEATHER_TOKEN + "&details=true&metric=true"
-ACCUWEATHER_CURRENT_URL = "http://dataservice.accuweather.com/currentconditions/v1/" + ACCUWEATHER_LOCATION_ID + "?apikey=" + ACCUWEATHER_TOKEN + "&details=true"
-
 
 with open("external/visualcrossing.com-api-token.txt") as fp:
     VISUALCROSSING_TOKEN = fp.readline().strip()
