@@ -1,14 +1,13 @@
 import datetime
 import os
 import sys
-import time
 from abc import ABC, abstractmethod
 
 import drawing
 import screensavers
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
-from configuration import SPLASH_SCREEN_DISPLAY, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
+from configuration import SPLASH_SCREEN_DISPLAY
 from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, VolumeEvent
 from PIL import Image, ImageDraw
 
@@ -30,6 +29,45 @@ class ShortLifeWindow(ABC):
     @abstractmethod
     def draw(self) -> Image:
         pass
+
+
+class SlideWindow(ABC):
+
+    def __init__(self, width, height, stop_time=2 * 1_000):
+        self.width = width
+        self.height = height
+        self.stop_time = stop_time
+        self.in_movement = False
+        self.move_step = 8
+        self.position = 0
+        self.last_stop = now()
+
+    @abstractmethod
+    def get_strip(self):
+        pass
+
+    def draw(self) -> Image:
+        strip = self.get_strip()
+
+        if now() > (self.last_stop + self.stop_time):
+            self.in_movement = True
+
+        if self.in_movement:
+            if self.position + self.width == strip.size[0]:
+                self.position = 0
+
+            next_move_step = self.move_step
+            for i in range(0, self.move_step):
+                if (self.position + (i + 1)) % self.width == 0:
+                    next_move_step = i + 1
+                    break
+            self.position += next_move_step
+
+            if self.position % self.width == 0:
+                self.in_movement = False
+                self.last_stop = now()
+
+        return strip.crop([self.position, 0, self.position + self.width, strip.size[1]])
 
 
 class TunerStatusWindow(ShortLifeWindow):
@@ -110,59 +148,28 @@ class SplashScreenWindow(ShortLifeWindow):
         return drawing.splash_screen(self.width, self.height)
 
 
-class AstroWindow:
-    def __init__(self):
+class AstroWindow(SlideWindow):
+    def __init__(self, width: int, height: int):
+        super(AstroWindow, self).__init__(width, height)
         self.astro_data = None
-        self.in_movement = False
-        self.move_step = 8
-        self.position = 0
-        self.last_stop = now()
-        self.stop_time = 2 * 1_000
 
-    def draw(self, width, height) -> Image:
-
-        strip = drawing.create_astro_strip(width, height, self.astro_data)
-
-        if now() > (self.last_stop + self.stop_time):
-            self.in_movement = True
-
-        if self.in_movement:
-            if self.position + width == strip.size[0]:
-                self.position = 0
-
-            next_move_step = self.move_step
-            for i in range(0, self.move_step):
-                if (self.position + (i + 1)) % width == 0:
-                    next_move_step = i + 1
-                    break
-            self.position += next_move_step
-
-            if self.position % width == 0:
-                self.in_movement = False
-                self.last_stop = now()
-
-        return strip.crop([self.position, 0, self.position + width, height])
+    def get_strip(self):
+        return drawing.create_astro_strip(self.width, self.height, self.astro_data)
 
 
-class WeatherWindow:
+class MeteoWindow(SlideWindow):
+    def __init__(self, width: int, height: int):
+        super(MeteoWindow, self).__init__(width, height)
 
-    def __init__(self):
-        pass
+    def get_strip(self):
+        # img = Image.open(Assets.weather_icons + "partly-cloudy-night.png").convert('L')
+        # img.thumbnail((width, height), Image.Resampling.LANCZOS)
+        # result.paste(img, (round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
+        return Image.new('L', (self.width, self.height), drawing.C_BLACK)
 
-    def draw(self, width, height) -> Image:
-        result = Image.new('L', (width, height), drawing.C_BLACK)
-
-        #img = Image.open(Assets.weather_icons + "partly-cloudy-night.png").convert('L')
-        #img.thumbnail((width, height), Image.Resampling.LANCZOS)
-
-        #result.paste(img, (round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
-        return result
 
 class MainWindow:
-    def __init__(self, width: int, height: int, astro_window: AstroWindow, weather_window: WeatherWindow):
-        self.astro_window = astro_window
-        self.weather_window = weather_window
-
+    def __init__(self, width: int, height: int):
         self.width = width
         self.height = height
 
@@ -178,6 +185,9 @@ class MainWindow:
         # split horizontally in half
         self.y_middle = round(self.height / 2)
 
+        self.astro_window = AstroWindow(self.x_low - self.start_x, self.end_y - self.y_middle)
+        self.meteo_window = MeteoWindow(self.end_x - self.x_up, self.y_middle - self.start_y)
+
     def draw(self, margin=8):
         result = Image.new('L', (self.width, self.height), drawing.C_BLACK)
         draw = ImageDraw.Draw(result)
@@ -190,45 +200,32 @@ class MainWindow:
         # horizontal line in a half:
         draw.line([(margin, self.y_middle), (self.end_x - margin, self.y_middle)], fill=drawing.C_WHITE)
 
-        q1 = self.q1()
+        # Quarter 1 - display date
+        currently = datetime.datetime.now()
+        text = [drawing.display_week_day(currently.weekday()) + ", " + str(currently.day), drawing.display_month(currently.month)]
+        q1 = drawing.text_window(self.x_up - self.start_x, tuple(text), tuple([16, 34]), is_frame=False, vertical_space=2,
+                                 fill=drawing.C_BLACK)
         y = round((((self.y_middle - self.start_y) - q1.size[1]) / 2))
         result.paste(q1, (self.start_x, y))
 
-        q2 = self.q2()
+        # Quarter 2 - display meteo info
+        # frame max size: 50x42
+        q2 = self.meteo_window.draw()
         y = round((((self.y_middle - self.start_y) - q2.size[1]) / 2))
         result.paste(q2, (self.x_up + 1, y - 1))
 
-        q3 = self.q3()
+        # Quarter 3 - astrological information
+        q3 = self.astro_window.draw()
         y = round((((self.y_middle - self.start_y) - q3.size[1]) / 2))
         result.paste(q3, (self.start_x, y + self.y_middle + 2))
 
-        q4 = self.q4()
+        # Quarter 4 - display time
+        text = [datetime.datetime.now().strftime("%H:%M")]
+        q4 = drawing.text_window(self.end_x - self.x_low, tuple(text), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
         y = round((((self.end_y - self.y_middle) - q4.size[1]) / 2))
         result.paste(q4, (self.x_low + 1, y + self.y_middle))
 
         return result
-
-    def q1(self):
-        # Quarter 1 - display date
-        now = datetime.datetime.now()
-        text = [drawing.display_week_day(now.weekday()) + ", " + str(now.day), drawing.display_month(now.month)]
-        return drawing.text_window(self.x_up - self.start_x, tuple(text), tuple([16, 34]), is_frame=False, vertical_space=2,
-                                   fill=drawing.C_BLACK)
-
-    def q2(self):
-        # Quarter 2 - display weather
-        # frame max size: 50x42
-        # return drawing.text_window(self.end_x - self.x_up, tuple([" "]), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
-        return self.weather_window.draw(50, 43)
-
-    def q3(self):
-        # Quarter 3 - astrological information
-        return self.astro_window.draw(self.x_low - self.start_x, self.end_y - self.y_middle)
-
-    def q4(self):
-        # Quarter 4 - display time
-        text = [datetime.datetime.now().strftime("%H:%M")]
-        return drawing.text_window(self.end_x - self.x_low, tuple(text), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
 
 
 class DisplayManager:
@@ -239,10 +236,8 @@ class DisplayManager:
         self.splash = SplashScreenWindow(width, height)
         self.windows = []
         self.station = None
-        self.astro_window = AstroWindow()
-        self.weather_window = WeatherWindow()
         self.screensaver_window = None
-        self.main_window = MainWindow(width, height - 13, self.astro_window, self.weather_window)
+        self.main_window = MainWindow(width, height - 13)
 
     def volume(self, event):
         self.add_window(VolumeWindow(event, self.width - 10))
@@ -255,7 +250,7 @@ class DisplayManager:
         self.add_window(TunerStatusWindow(event, self.width - 10))
 
     def astro(self, event: AstroData):
-        self.astro_window.astro_data = event
+        self.main_window.astro_window.astro_data = event
 
     def screensaver(self, event: bool):
         if event:
@@ -265,7 +260,7 @@ class DisplayManager:
 
     def new_astro(self):
         today = datetime.date.today()
-        if self.astro_window.astro_data is None or self.astro_window.astro_data.day != today:
+        if self.main_window.astro_window.astro_data is None or self.main_window.astro_window.astro_data.day != today:
             return today
         return None
 
@@ -296,22 +291,3 @@ class DisplayManager:
             self.screensaver_window.draw(main)
 
         return main
-
-
-if __name__ == "__main__":
-    manager = DisplayManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
-    manager.splash = None
-    manager.station = STATIONS[2]
-    manager.astro(AstroData(
-        datetime.date.today(),
-        datetime.time(5, 31), datetime.time(19, 3),
-        datetime.time(19, 17), None,
-        0.32))
-
-    while True:
-        #    if 1 == 1:
-        image = manager.display()
-        image = image.point(lambda p: p * 16)
-        # image.show()
-        image.save("out.bmp")
-        time.sleep(0.1)

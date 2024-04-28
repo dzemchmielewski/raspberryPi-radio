@@ -227,9 +227,6 @@ def create_astro_strip(width: int, height: int, astro_data: AstroData) -> Image:
     first_frame = result.crop([0, 0, width, height])
     result.paste(first_frame, (5 * width, 0))
 
-    # image = result.point(lambda p: p * 16)
-    # image.save("out2.bmp")
-
     return result
 
 
