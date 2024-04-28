@@ -15,7 +15,7 @@ from hardware import RotaryEncoder, RotaryButton, Button
 
 class AbstractStationController(RadioItem):
     CODE = "station_ctrl"
-    EVENT_STATION = "station_up"
+    EVENT_STATION = "station"
 
     def __init__(self):
         super(AbstractStationController, self).__init__(Bus(STATION_CONTROLLER_LOG, AbstractStationController.CODE))

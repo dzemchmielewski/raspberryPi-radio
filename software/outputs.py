@@ -80,18 +80,24 @@ class Tuner(RadioItem):
 
     def loop(self):
         if (station := self.bus.consume_event(Tuner.EVENT_STATION)) is not None:
-            # First notify about the sound break:
-            self.is_playing = False
-            self.bus.send_manager_event(Tuner.EVENT_PLAY_STATUS, self.status())
-            # Then change the station:
-            # self.bus.log("Playing " + str(station))
-            self.current_station = station
-            self.player.set_media(vlc.Media(station.url))
-            self.player.play()
+            if self.current_station != station or not self.is_playing:
+                # First notify about the sound break:
+                self.is_playing = False
+                self.bus.send_manager_event(Tuner.EVENT_PLAY_STATUS, self.status())
+                # Then change the station:
+                # self.bus.log("Playing " + str(station))
+                self.current_station = station
+                self.player.set_media(vlc.Media(station.url))
+                self.player.play()
+            else:
+                # already playing that station...
+                self.bus.send_manager_event(Tuner.EVENT_PLAY_STATUS, self.status())
+
         elif self.bus.consume_event(Tuner.EVENT_RECOGNIZE) is not None:
             if self.recognizing_thread is None or not self.recognizing_thread.is_alive():
                 self.recognizing_thread = Thread(target=self.__recognize__, args=[self.current_station])
                 self.recognizing_thread.start()
+
         else:
             current_playing_status = self.player.is_playing()
             if self.is_playing != current_playing_status:

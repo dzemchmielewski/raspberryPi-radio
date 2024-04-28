@@ -52,7 +52,10 @@ class RadioManager(RadioItem):
             self.bus.send_event(AstroController.CODE, AstroController.EVENT_ASTRO_DATA_REQUEST, event)
 
         if self.bus.consume_event(DummyController.EVENT_DUMMY) is not None:
-            self.last_event = now()
+            if self.is_screensaver:
+                self.last_event = now()
+            else:
+                self.last_event = now() - self.screensaver_activation_time
 
         if self.is_screensaver:
             if self.last_event + self.screensaver_activation_time > now():

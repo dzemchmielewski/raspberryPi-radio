@@ -42,6 +42,13 @@ class Station:
     def __str__(self):
         return "[" + self.code + "][" + self.name + "][" + self.url + "]"
 
+    def __hash__(self):
+        return hash((self.code, self.name, self.url))
+
+    def __eq__(self, other):
+        if not isinstance(other, Station):
+            return NotImplemented
+        return self.name == other.name and self.code == other.code and self.url == other.url
 
 class TunerStatus(Enum):
     PLAYING = "P"

@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 
 import drawing
-from assets import Assets
+from screensavers import FadingStars
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from configuration import SPLASH_SCREEN_DISPLAY, STATIONS, DISPLAY_WIDTH, DISPLAY_HEIGHT
@@ -158,20 +158,6 @@ class WeatherWindow:
         #result.paste(img, (round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
         return result
 
-
-class Screensaver:
-
-    def __init__(self, width: int, height: int):
-        self.width = width
-        self.height = height
-        self.position = 0
-
-    def draw(self, image: Image):
-        # TODO: make some fancy screensaver
-        draw = ImageDraw.Draw(image)
-        draw.rectangle(((0, 0), (image.size[0] - 1, image.size[1] - 1)), fill=drawing.C_BLACK)
-
-
 class MainWindow:
     def __init__(self, width: int, height: int, astro_window: AstroWindow, weather_window: WeatherWindow):
         self.astro_window = astro_window
@@ -273,7 +259,7 @@ class DisplayManager:
 
     def screensaver(self, event: bool):
         if event:
-            self.screensaver_window = Screensaver(self.width, self.height)
+            self.screensaver_window = FadingStars(self.width, self.height)
         else:
             self.screensaver_window = None
 
