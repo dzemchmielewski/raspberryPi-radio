@@ -8,7 +8,8 @@ from alsaaudio import Mixer
 from bus import Bus
 from configuration import STATIONS, RT_CURRENT_STATION, VISUALCROSSING_URL, VISUALCROSSING_TOKEN
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG, \
-    ACCUWEATHER_CONTROLLER_LOG, WeatherEvent, now, AstroData, ASTRO_CONTROLLER_LOG, DUMMY_CONTROLLER_LOG
+    now, AstroData, ASTRO_CONTROLLER_LOG, DUMMY_CONTROLLER_LOG, METEO_CONTROLLER_LOG, MeteoData, \
+    HOUR
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
@@ -201,6 +202,51 @@ class AstroController(RadioItem):
         pass
 
 
+class MeteoController(RadioItem):
+    CODE = "meteo_ctrl"
+    EVENT_METEO_DATA = "meteo_data"
+
+    def __init__(self):
+        super(MeteoController, self).__init__(Bus(METEO_CONTROLLER_LOG, MeteoController.CODE), 2)
+        self.last_broadcasted = None
+        self.data = None
+        self.broadcast_period = 0.5 * HOUR
+
+    def call4data(self):
+        try:
+            self.bus.log("External call")
+            request = (VISUALCROSSING_URL
+                       + "?unitGroup=metric&key=" + VISUALCROSSING_TOKEN
+                       + "&contentType=json")
+            response = json.loads(requests.get(request).text)
+            current_cond = response["currentConditions"]
+            self.data = MeteoData(
+                datetime.fromtimestamp(current_cond.get("datetimeEpoch", None)),
+                response.get("description", None),
+                current_cond.get("icon", None),
+                current_cond.get("temp", None))
+            self.bus.log("External call completed")
+
+        except requests.exceptions.HTTPError as e:
+            self.bus.log(str(e))
+        except requests.exceptions.ConnectionError as e:
+            self.bus.log(str(e))
+        except requests.exceptions.Timeout as e:
+            self.bus.log(str(e))
+        except requests.exceptions.RequestException as e:
+            self.bus.log(str(e))
+
+    def loop(self):
+        current_time = now()
+        if self.last_broadcasted is None or current_time > self.last_broadcasted + self.broadcast_period:
+            self.call4data()
+            self.bus.send_manager_event(MeteoController.EVENT_METEO_DATA, self.data)
+            self.last_broadcasted = current_time
+
+    def exit(self):
+        pass
+
+
 class DummyController(RadioItem):
     CODE = "dummy_ctrl"
     EVENT_DUMMY = "dummy"
@@ -219,42 +265,3 @@ class DummyController(RadioItem):
 
     def exit(self):
         pass
-
-
-# class AccuweatherController(RadioItem):
-#     CODE = "accuweather"
-#     EVENT = "new_weather"
-#
-#     def __init__(self):
-#         super(AccuweatherController, self).__init__(Bus(ACCUWEATHER_CONTROLLER_LOG, AccuweatherController.CODE), 2)
-#         self.last_event: WeatherEvent = None
-#         self.last_call: int = None
-#         self.period = 60 * 60 * 1_000
-#         # self.period = 30 * 1_000
-#
-#     def loop(self):
-#         try:
-#
-#             if self.last_call is None or now() > self.last_call + self.period:
-#
-#                 current = json.loads(requests.get(ACCUWEATHER_CURRENT_URL).text)
-#                 forecast = json.loads(requests.get(ACCUWEATHER_FORECAST_URL).text)
-#                 event = WeatherEvent(current, forecast)
-#                 if self.last_event is None or self.last_event.dates() != event.dates():
-#                     self.last_event = event
-#                     self.bus.send_manager_event(AccuweatherController.EVENT, event)
-#                 else:
-#                     self.bus.log("No changes to the accuweather data.")
-#                 self.last_call = now()
-#
-#         except requests.exceptions.HTTPError as e:
-#             self.bus.log(str(e))
-#         except requests.exceptions.ConnectionError as e:
-#             self.bus.log(str(e))
-#         except requests.exceptions.Timeout as e:
-#             self.bus.log(str(e))
-#         except requests.exceptions.RequestException as e:
-#             self.bus.log(str(e))
-#
-#     def exit(self):
-#         pass

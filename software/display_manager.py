@@ -5,10 +5,11 @@ from abc import ABC, abstractmethod
 
 import drawing
 import screensavers
+from assets import Assets
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from configuration import SPLASH_SCREEN_DISPLAY
-from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, VolumeEvent
+from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, VolumeEvent, MeteoData
 from PIL import Image, ImageDraw
 
 
@@ -52,7 +53,7 @@ class SlideWindow(ABC):
         if now() > (self.last_stop + self.stop_time):
             self.in_movement = True
 
-        if self.in_movement:
+        if strip.size[0] > self.width and self.in_movement:
             if self.position + self.width == strip.size[0]:
                 self.position = 0
 
@@ -160,13 +161,15 @@ class AstroWindow(SlideWindow):
 class MeteoWindow(SlideWindow):
     def __init__(self, width: int, height: int):
         super(MeteoWindow, self).__init__(width, height)
-        self.meteo_data = None
+        self.meteo_data: MeteoData = None
 
     def get_strip(self):
-        # img = Image.open(Assets.weather_icons + "partly-cloudy-night.png").convert('L')
-        # img.thumbnail((width, height), Image.Resampling.LANCZOS)
-        # result.paste(img, (round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
-        return Image.new('L', (self.width, self.height), drawing.C_BLACK)
+        if self.meteo_data is None:
+            return Image.new('L', (self.width, self.height), drawing.C_BLACK)
+
+        img = Image.open(Assets.weather_icons + self.meteo_data.icon + ".png").convert('L')
+        img.thumbnail((self.width, self.height), Image.Resampling.LANCZOS)
+        return img
 
 
 class MainWindow:
@@ -209,7 +212,7 @@ class MainWindow:
         y = round((((self.y_middle - self.start_y) - q1.size[1]) / 2))
         result.paste(q1, (self.start_x, y))
 
-        # Quarter 2 - display meteo info
+        # Quarter 2 - meteo info
         # frame max size: 50x42
         q2 = self.meteo_window.draw()
         y = round((((self.y_middle - self.start_y) - q2.size[1]) / 2))
@@ -289,3 +292,7 @@ class DisplayManager:
             self.screensaver_window.draw(main)
 
         return main
+
+if __name__ == "__main__":
+
+    pass

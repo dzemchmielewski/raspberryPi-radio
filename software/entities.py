@@ -10,13 +10,17 @@ EVENT_EXIT = "exit"
 RADIO_LOG = "RADIO   "
 STATION_CONTROLLER_LOG = "STAT-CTR"
 VOLUME_CONTROLLER_LOG = "VOL-CTR "
-RECOGNIZE_CONTROLLER_LOG = "RECG-CTR"
+RECOGNIZE_CONTROLLER_LOG = "REC-CTR "
 ASTRO_CONTROLLER_LOG = "ASTR-CTR"
+METEO_CONTROLLER_LOG = "METE-CTR"
 DUMMY_CONTROLLER_LOG = "DUMM-CTR"
-ACCUWEATHER_CONTROLLER_LOG = "ACCUWTHR"
 LED_OUTPUT_LOG = "LED     "
 TUNER_OUTPUT_LOG = "TUNER   "
 DISPLAY_OUTPUT_LOG = "DISPLAY "
+
+SECOND = 1_000
+MINUTE = 60 * SECOND
+HOUR = 60 * MINUTE
 
 
 def now() -> int:
@@ -103,6 +107,20 @@ class AstroData:
 
     def __hash__(self):
         return hash((self.day, self.sunrise, self.sunset, self.moonrise, self.moonset, self.moon_phase))
+
+
+class MeteoData:
+    def __init__(self, datetime, description, icon, temperature):
+        self.datetime = datetime
+        self.description = description
+        self.icon = icon
+        self.temperature = temperature
+
+    def __str__(self):
+        return ("METEO[" + self.datetime.strftime("%Y-%m-%d %H:%M:%S") + "]"
+                + "[" + self.description + "]"
+                + "[" + self.icon + "]"
+                + "[" + str(self.temperature) + "]")
 
 
 class WeatherEvent:
