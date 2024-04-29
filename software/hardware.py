@@ -60,7 +60,7 @@ class RotaryEncoder:
 class LED:
 
     def __init__(self, pin, blinking_time=0.1):
-        self.led = gpiozero.LED(pin)
+        self.led = gpiozero.PWMLED(pin)
         self.led.off()
         self.stop_blinking = True
         self.blink_thread = None
@@ -90,7 +90,7 @@ class LED:
 
     def on(self):
         self.stop_blink()
-        self.led.on()
+        self.led.value = 0.1
 
     def off(self):
         self.stop_blink()
