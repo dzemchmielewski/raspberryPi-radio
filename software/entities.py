@@ -156,7 +156,7 @@ class RecognizeStatus:
         self.json = json
 
     def __str__(self):
-        return "[" + str(self.state) + "][" + self.station.code + "][" + str(self.json) + "]"
+        return "[" + str(self.state) + "][" + self.station.code + "]"
 
 
 class RadioItem(ABC):

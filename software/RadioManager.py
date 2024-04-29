@@ -7,7 +7,7 @@ from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, 
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
 from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController
 from handtests.manual_controllers import KeyboardController
-from outputs import Tuner, TunerStatusLED, Display, OLEDDisplay, FileOutputDisplay
+from outputs import Tuner, LEDIndicator, Display, OLEDDisplay, FileOutputDisplay
 
 
 class RadioManager(RadioItem):
@@ -25,7 +25,7 @@ class RadioManager(RadioItem):
     def loop(self):
         if (event := self.bus.consume_event(StationController.EVENT_STATION)) is not None:
             self.current_station = event
-            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
+            self.bus.send_event(LEDIndicator.CODE, LEDIndicator.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
             self.last_event = now()
@@ -35,7 +35,7 @@ class RadioManager(RadioItem):
             self.last_event = now()
 
         if (event := self.bus.consume_event(Tuner.EVENT_PLAY_STATUS)) is not None:
-            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_TUNER_STATUS, Status(event, STATIONS[self.current_station]))
+            self.bus.send_event(LEDIndicator.CODE, LEDIndicator.EVENT_TUNER_STATUS, Status(event, STATIONS[self.current_station]))
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(event, STATIONS[self.current_station]))
             self.last_event = now()
 
@@ -44,7 +44,7 @@ class RadioManager(RadioItem):
             self.last_event = now()
         if (event := self.bus.consume_event(Tuner.EVENT_RECOGNIZE_STATUS)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_RECOGNIZE_STATUS, event)
-            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_RECOGNIZE_STATUS, event)
+            self.bus.send_event(LEDIndicator.CODE, LEDIndicator.EVENT_RECOGNIZE_STATUS, event)
             self.last_event = now()
 
         if (event := self.bus.consume_event(AstroController.EVENT_ASTRO_DATA)) is not None:
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         jobs = (
             OLEDDisplay(0.1),
             Tuner(),
-            TunerStatusLED(LED_GREEN_PIN, LED_RED_PIN),
+            LEDIndicator(LED_GREEN_PIN, LED_RED_PIN),
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN),
             VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
             RecognizeController(RE2_CLICK_PIN),

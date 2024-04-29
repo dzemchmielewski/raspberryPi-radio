@@ -66,7 +66,9 @@ class Tuner(RadioItem):
                 r = requests.post(AUDD_URL, files={'file': f})
                 response = json.loads(r.text)
 
-            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, RecognizeStatus(RecognizeState.DONE, station, response))
+            result = RecognizeStatus(RecognizeState.DONE, station, response)
+            self.bus.log("Recognize: {}[{}]".format(result, result.json))
+            self.bus.send_manager_event(Tuner.EVENT_RECOGNIZE_STATUS, result)
 
         except requests.exceptions.RequestException as e:
             self.bus.log("Error querying AudD: " + str(e))
@@ -105,13 +107,13 @@ class Tuner(RadioItem):
                 self.bus.send_manager_event(Tuner.EVENT_PLAY_STATUS, self.status())
 
 
-class TunerStatusLED(RadioItem):
+class LEDIndicator(RadioItem):
     CODE = "led"
     EVENT_TUNER_STATUS = "play_status"
     EVENT_RECOGNIZE_STATUS = "rec_status"
 
     def __init__(self, pin_play, pin_rec):
-        super(TunerStatusLED, self).__init__(Bus(LED_OUTPUT_LOG, TunerStatusLED.CODE))
+        super(LEDIndicator, self).__init__(Bus(LED_OUTPUT_LOG, LEDIndicator.CODE))
         self.led_play = LED(pin_play)
         self.led_rec = LED(pin_rec)
         self.led_play.off()
@@ -122,7 +124,7 @@ class TunerStatusLED(RadioItem):
         self.led_rec.off()
 
     def loop(self):
-        if (event := self.bus.consume_event(TunerStatusLED.EVENT_TUNER_STATUS)) is not None:
+        if (event := self.bus.consume_event(LEDIndicator.EVENT_TUNER_STATUS)) is not None:
 
             if event.status == TunerStatus.PLAYING:
                 self.led_play.on()
@@ -133,7 +135,7 @@ class TunerStatusLED(RadioItem):
             else:
                 self.led_play.off()
 
-        if (event := self.bus.consume_event(TunerStatusLED.EVENT_RECOGNIZE_STATUS)) is not None:
+        if (event := self.bus.consume_event(LEDIndicator.EVENT_RECOGNIZE_STATUS)) is not None:
 
             if event.state == RecognizeState.CONNECTING or event.state == RecognizeState.RECORDING:
                 self.led_rec.start_blink()
