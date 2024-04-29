@@ -3,7 +3,7 @@ from threading import Thread
 
 from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
-    FULL_LOAD, BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN, LED_GREEN_PIN
+    FULL_LOAD, BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN, LED_GREEN_PIN, LED_RED_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
 from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController
 from handtests.manual_controllers import KeyboardController
@@ -44,6 +44,7 @@ class RadioManager(RadioItem):
             self.last_event = now()
         if (event := self.bus.consume_event(Tuner.EVENT_RECOGNIZE_STATUS)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_RECOGNIZE_STATUS, event)
+            self.bus.send_event(TunerStatusLED.CODE, TunerStatusLED.EVENT_RECOGNIZE_STATUS, event)
             self.last_event = now()
 
         if (event := self.bus.consume_event(AstroController.EVENT_ASTRO_DATA)) is not None:
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         jobs = (
             OLEDDisplay(0.1),
             Tuner(),
-            TunerStatusLED(LED_GREEN_PIN),
+            TunerStatusLED(LED_GREEN_PIN, LED_RED_PIN),
             StationController(RE2_LEFT_PIN, RE2_RIGHT_PIN),
             VolumeController(RE1_LEFT_PIN, RE1_RIGHT_PIN, RE1_CLICK_PIN),
             RecognizeController(RE2_CLICK_PIN),

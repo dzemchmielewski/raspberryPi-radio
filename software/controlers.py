@@ -9,7 +9,7 @@ from bus import Bus
 from configuration import STATIONS, RT_CURRENT_STATION, VISUALCROSSING_URL, VISUALCROSSING_TOKEN
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG, \
     now, AstroData, ASTRO_CONTROLLER_LOG, DUMMY_CONTROLLER_LOG, METEO_CONTROLLER_LOG, MeteoData, \
-    HOUR
+    MINUTE
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
@@ -210,7 +210,7 @@ class MeteoController(RadioItem):
         super(MeteoController, self).__init__(Bus(METEO_CONTROLLER_LOG, MeteoController.CODE), 2)
         self.last_broadcasted = None
         self.data = None
-        self.broadcast_period = 0.5 * HOUR
+        self.broadcast_period = 10 * MINUTE
 
     def call4data(self):
         try:

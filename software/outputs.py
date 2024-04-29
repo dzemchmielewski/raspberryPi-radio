@@ -107,27 +107,40 @@ class Tuner(RadioItem):
 
 class TunerStatusLED(RadioItem):
     CODE = "led"
-    EVENT_TUNER_STATUS = "status"
+    EVENT_TUNER_STATUS = "play_status"
+    EVENT_RECOGNIZE_STATUS = "rec_status"
 
-    def __init__(self, pin):
+    def __init__(self, pin_play, pin_rec):
         super(TunerStatusLED, self).__init__(Bus(LED_OUTPUT_LOG, TunerStatusLED.CODE))
-        self.led = LED(pin)
-        self.led.off()
+        self.led_play = LED(pin_play)
+        self.led_rec = LED(pin_rec)
+        self.led_play.off()
+        self.led_rec.off()
 
     def exit(self):
-        self.led.off()
+        self.led_play.off()
+        self.led_rec.off()
 
     def loop(self):
         if (event := self.bus.consume_event(TunerStatusLED.EVENT_TUNER_STATUS)) is not None:
 
             if event.status == TunerStatus.PLAYING:
-                self.led.on()
+                self.led_play.on()
 
             elif event.status == TunerStatus.TUNING:
-                self.led.start_blink()
+                self.led_play.start_blink()
 
             else:
-                self.led.off()
+                self.led_play.off()
+
+        if (event := self.bus.consume_event(TunerStatusLED.EVENT_RECOGNIZE_STATUS)) is not None:
+
+            if event.state == RecognizeState.CONNECTING or event.state == RecognizeState.RECORDING:
+                self.led_rec.start_blink()
+            elif event.state == RecognizeState.QUERYING:
+                self.led_rec.on()
+            else:
+                self.led_rec.off()
 
 
 class Display(RadioItem):
