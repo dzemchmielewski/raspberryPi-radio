@@ -8,6 +8,7 @@ from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerSta
 from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController
 from handtests.manual_controllers import KeyboardController
 from outputs import Tuner, LEDIndicator, Display, OLEDDisplay, FileOutputDisplay
+from whoishome import WhoIsHomeController
 
 
 class RadioManager(RadioItem):
@@ -83,6 +84,7 @@ if __name__ == "__main__":
             DummyController(BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN),
             AstroController(),
             MeteoController(),
+            WhoIsHomeController(),
         )
     else:
         jobs = (
