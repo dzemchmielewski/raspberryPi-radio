@@ -6,7 +6,7 @@ from operator import itemgetter
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 from assets import Assets
-from entities import AstroData, time_f
+from entities import AstroData, time_f, MeteoData
 
 COLOR_SCALE = 16
 C_WHITE = 15
@@ -230,6 +230,40 @@ def create_astro_strip(width: int, height: int, astro_data: AstroData) -> Image:
     return result
 
 
+@cache
+def create_meteo_strip(width: int, height: int, meteo_data: MeteoData) -> Image:
+    result = Image.new('L', (width * 4, height), C_BLACK)
+    if meteo_data is None:
+        return result
+
+    i = 0
+    img = Image.open(Assets.weather_icons + meteo_data.icon + ".png").convert('L')
+    img.thumbnail((width, height), Image.Resampling.LANCZOS)
+    result.paste(img, ((i * width) + round((width - img.size[0]) / 2), 0))
+
+    i += 1
+    degree = chr(176)
+    text = [("{}" + degree + "C").format(meteo_data.temperature), "{}hPa".format(round(meteo_data.pressure))]
+    img = text_window(width, tuple(text), tuple([20, 20]), vertical_space=4, horizontal_space=0,
+                      is_frame=False,
+                      font_path=Assets.font_path)
+    result.paste(img, ((i * width) + round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
+
+    i += 1
+    text = meteo_data.conditions.split()
+    img = text_window(width, tuple(text), tuple([20] * len(text)), vertical_space=2, horizontal_space=0,
+                      is_frame=False,
+                      font_path=Assets.font_path)
+    result.paste(img, ((i * width) + round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
+
+    # Repeat first frame at the end:
+    i += 1
+    first_frame = result.crop([0, 0, width, height])
+    result.paste(first_frame, (i * width, 0))
+
+    return result
+
+
 def __volume__(width: int, height: int, volume: int, fill):
     result = Image.new('L', (width, height), fill)
     draw = ImageDraw.Draw(result)
@@ -302,20 +336,19 @@ def moon_phase(width: int, height: int, phase: float):
     if phase is None:
         return result
 
-    moon_phase_height = round(height - ((4/10) * height))
+    moon_phase_height = round(height - ((4 / 10) * height))
     if phase is not None:
-        result.paste(_moon_phase(width, moon_phase_height, phase), (0,0))
+        result.paste(_moon_phase(width, moon_phase_height, phase), (0, 0))
 
-    text = str(round(100*(1 - (2 * abs(phase - 0.5)))))
+    text = str(round(100 * (1 - (2 * abs(phase - 0.5)))))
     moon_text_img = text_window(width, tuple([text + "%"]), tuple([14]), vertical_space=2, horizontal_space=0, is_frame=False,
-                            font_path=Assets.font_path)
+                                font_path=Assets.font_path)
 
     result.paste(moon_text_img, (
         round((width - moon_text_img.size[0]) / 2),
         moon_phase_height + round((height - moon_phase_height - moon_text_img.size[1]) / 2)))
 
     return result
-
 
 # if __name__ == "__main__":
 #     #     image = moon_phase(38, 40, float(sys.argv[1]))

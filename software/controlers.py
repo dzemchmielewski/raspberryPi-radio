@@ -224,7 +224,10 @@ class MeteoController(RadioItem):
                 datetime.fromtimestamp(current_cond.get("datetimeEpoch", None)),
                 response.get("description", None),
                 current_cond.get("icon", None),
-                current_cond.get("temp", None))
+                current_cond.get("temp", None),
+                current_cond.get("pressure", None),
+                current_cond.get("conditions", None))
+
             self.bus.log("External call completed")
 
         except requests.exceptions.HTTPError as e:

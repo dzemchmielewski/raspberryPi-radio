@@ -9,13 +9,13 @@ from assets import Assets
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from configuration import SPLASH_SCREEN_DISPLAY
-from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, VolumeEvent, MeteoData
+from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, VolumeEvent, MeteoData, SECOND
 from PIL import Image, ImageDraw
 
 
 class ShortLifeWindow(ABC):
 
-    def __init__(self, life_span=3 * 1_000, width: int = 0):
+    def __init__(self, life_span=3 * SECOND, width: int = 0):
         self.start = now()
         self.width = width
         self.life_span = life_span
@@ -34,7 +34,7 @@ class ShortLifeWindow(ABC):
 
 class SlideWindow(ABC):
 
-    def __init__(self, width, height, stop_time=2 * 1_000):
+    def __init__(self, width: int, height: int, stop_time: int = 2 * SECOND, initial_delay: int = 0):
         self.width = width
         self.height = height
         self.stop_time = stop_time
@@ -42,6 +42,7 @@ class SlideWindow(ABC):
         self.move_step = 8
         self.position = 0
         self.last_stop = now()
+        self.initial_delay = initial_delay
 
     @abstractmethod
     def get_strip(self):
@@ -50,7 +51,8 @@ class SlideWindow(ABC):
     def draw(self) -> Image:
         strip = self.get_strip()
 
-        if now() > (self.last_stop + self.stop_time):
+        if now() > (self.last_stop + self.stop_time + self.initial_delay):
+            self.initial_delay = 0
             self.in_movement = True
 
         if strip.size[0] > self.width and self.in_movement:
@@ -160,16 +162,11 @@ class AstroWindow(SlideWindow):
 
 class MeteoWindow(SlideWindow):
     def __init__(self, width: int, height: int):
-        super(MeteoWindow, self).__init__(width, height)
+        super(MeteoWindow, self).__init__(width, height, initial_delay=0.5 * SECOND, stop_time=3 * SECOND)
         self.meteo_data: MeteoData = None
 
     def get_strip(self):
-        if self.meteo_data is None:
-            return Image.new('L', (self.width, self.height), drawing.C_BLACK)
-
-        img = Image.open(Assets.weather_icons + self.meteo_data.icon + ".png").convert('L')
-        img.thumbnail((self.width, self.height), Image.Resampling.LANCZOS)
-        return img
+        return drawing.create_meteo_strip(self.width, self.height, self.meteo_data)
 
 
 class MainWindow:
@@ -293,6 +290,6 @@ class DisplayManager:
 
         return main
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     pass

@@ -54,6 +54,7 @@ class Station:
             return NotImplemented
         return self.name == other.name and self.code == other.code and self.url == other.url
 
+
 class TunerStatus(Enum):
     PLAYING = "P"
     TUNING = "N"
@@ -110,17 +111,20 @@ class AstroData:
 
 
 class MeteoData:
-    def __init__(self, datetime, description, icon, temperature):
+    def __init__(self, datetime, description, icon, temperature, pressure, conditions):
         self.datetime = datetime
         self.description = description
         self.icon = icon
         self.temperature = temperature
+        self.pressure = pressure
+        self.conditions = conditions
 
     def __str__(self):
         return ("METEO[" + self.datetime.strftime("%Y-%m-%d %H:%M:%S") + "]"
-                + "[" + self.description + "]"
-                + "[" + self.icon + "]"
-                + "[" + str(self.temperature) + "]")
+                + "[{}C,{}hPa][{}({}) - {}]".format(self.temperature, self.pressure, self.conditions, self.icon, self.description))
+
+    def __hash__(self):
+        return hash((self.datetime, self.description, self.icon, self.temperature, self.pressure, self.conditions))
 
 
 class WeatherEvent:
