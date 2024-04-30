@@ -226,7 +226,10 @@ class MeteoController(RadioItem):
                 current_cond.get("icon", None),
                 current_cond.get("temp", None),
                 current_cond.get("pressure", None),
-                current_cond.get("conditions", None))
+                current_cond.get("conditions", None),
+                current_cond.get("windgust", None),
+                current_cond.get("windspeed", None),
+                current_cond.get("winddir", None))
 
             self.bus.log("External call completed")
 

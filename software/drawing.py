@@ -249,9 +249,14 @@ def create_meteo_strip(width: int, height: int, meteo_data: MeteoData) -> Image:
                       font_path=Assets.font_path)
     result.paste(img, ((i * width) + round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
 
+    # km = chr(13214)
+    # up_left_arrow = chr(8632)
+
     i += 1
-    text = meteo_data.conditions.split()
-    img = text_window(width, tuple(text), tuple([20] * len(text)), vertical_space=2, horizontal_space=0,
+    text = [("{} ({})").format(meteo_data.windspeed, meteo_data.windgust),
+            "  km/h  ",
+            ("{} {}" + degree).format(meteo_data.winddir_compass(), round(meteo_data.winddir))]
+    img = text_window(width, tuple(text), tuple([15] * len(text)), vertical_space=1, horizontal_space=0,
                       is_frame=False,
                       font_path=Assets.font_path)
     result.paste(img, ((i * width) + round((width - img.size[0]) / 2), round((height - img.size[1]) / 2)))
@@ -425,3 +430,8 @@ def _split(text: str) -> []:
 if __name__ == "__main__":
     print(_split("Cooling down with a chance of rain Friday."))
     print(_split("Cooling down with a chance of rain Sunday & Monday."))
+
+values = [0, 15, 20, 45, 180, 190, 225, 300, 350]
+compass_sectors = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"]
+for v in values:
+    print("{} -> {}".format(v, compass_sectors[round(v / 22.5)]))

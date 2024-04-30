@@ -112,20 +112,30 @@ class AstroData:
 
 
 class MeteoData:
-    def __init__(self, datetime, description, icon, temperature, pressure, conditions):
+    compass_sectors = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"]
+
+    def __init__(self, datetime, description, icon, temperature, pressure, conditions, windgust, windspeed, winddir):
         self.datetime = datetime
         self.description = description
         self.icon = icon
         self.temperature = temperature
         self.pressure = pressure
         self.conditions = conditions
+        self.windgust = windgust
+        self.windspeed = windspeed
+        self.winddir = winddir
+
+    def winddir_compass(self):
+        return self.compass_sectors[round(self.winddir / 22.5)]
 
     def __str__(self):
         return ("METEO[" + self.datetime.strftime("%Y-%m-%d %H:%M:%S") + "]"
-                + "[{}C,{}hPa][{}({}) - {}]".format(self.temperature, self.pressure, self.conditions, self.icon, self.description))
+                + "[{}C,{}hPa][{}, wind: ({} - {}, {}) - {}]".format(self.temperature, self.pressure, self.icon, self.winddir,
+                                                                     self.winddir_compass(), self.windspeed, self.description))
 
     def __hash__(self):
-        return hash((self.datetime, self.description, self.icon, self.temperature, self.pressure, self.conditions))
+        return hash((self.datetime, self.description, self.icon, self.temperature, self.pressure, self.conditions, self.windspeed,
+                     self.windspeed, self.winddir))
 
 
 class WeatherEvent:

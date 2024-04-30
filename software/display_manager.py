@@ -36,7 +36,7 @@ class SlideWindow(ABC):
     DIRECTION_LEFT = 'L'
     DIRECTION_UP = 'U'
 
-    def __init__(self, width: int, height: int, stop_time=2 * SECOND, initial_delay: int = 0, direction=DIRECTION_LEFT):
+    def __init__(self, width: int, height: int, stop_time=2 * SECOND, initial_delay: int = 0, direction=DIRECTION_LEFT, debug=False):
         self.width = width
         self.height = height
         self.stop_time = stop_time
@@ -46,6 +46,7 @@ class SlideWindow(ABC):
         self.move_step = 8
         self.position = 0
         self.last_stop = now()
+        self.debug = debug
 
 
     @abstractmethod
@@ -64,10 +65,19 @@ class SlideWindow(ABC):
         else:
             raise Exception("Unknown direction value: {}".format(self.direction))
 
+        if self.debug:
+            print("width: {}, height: {}".format(self.width, self.height))
+
         if isinstance(self.stop_time, list):
-            stop_time = self.stop_time[(self.position // related_size) % len(self.stop_time)]
+            if strip.size[related_size_index]//related_size == 1:
+                stop_time = self.stop_time[(self.position // related_size)]
+            else:
+                stop_time = self.stop_time[(self.position // related_size) % ((strip.size[related_size_index]//related_size) - 1)]
         else:
             stop_time = self.stop_time
+
+        if self.debug:
+            print("{} :position , stop_time: {}, related_size: {} / {}".format(self.position, stop_time, strip.size[related_size_index], related_size))
 
         if now() > (self.last_stop + stop_time + self.initial_delay):
             self.initial_delay = 0
@@ -192,7 +202,7 @@ class MeteoWindow(SlideWindow):
 
 class DateWindow(SlideWindow):
     def __init__(self, width: int, height: int):
-        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[10 * SECOND, 3 * SECOND, 3 * SECOND], direction=SlideWindow.DIRECTION_UP)
+        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[10 * SECOND, 2 * SECOND, 3 * SECOND], direction=SlideWindow.DIRECTION_UP)
         self.description = None
 
     def get_strip(self):
