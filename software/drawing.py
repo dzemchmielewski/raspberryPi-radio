@@ -264,6 +264,50 @@ def create_meteo_strip(width: int, height: int, meteo_data: MeteoData) -> Image:
     return result
 
 
+@cache
+def create_date_strip(width: int, height: int, text, description, horizontally=False):
+
+    frames = 1
+    if description is not None:
+        frames = 3
+
+    if horizontally:
+        result = Image.new('L', (frames * width, height), C_BLACK)
+        def x_frame_offset(i: int):
+            return i * width
+
+        def y_frame_offset(i: int):
+            return 0
+
+    else:
+        result = Image.new('L', (width, frames * height), C_BLACK)
+        def x_frame_offset(i: int):
+            return 0
+
+        def y_frame_offset(i: int):
+            return i * height
+
+
+    img = text_window(width, tuple(text), tuple([20] * len(text)), is_frame=False, vertical_space=2,
+                      fill=C_BLACK)
+    i = 0
+    result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
+
+    if description is not None:
+        i += 1
+        desc = _split(description)
+        img = text_window(width, tuple(desc), tuple([13] * len(desc)), is_frame=False, vertical_space=2,
+                          fill=C_BLACK)
+        result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
+
+        # Repeat first frame at the end:
+        i += 1
+        first_frame = result.crop([0, 0, width, height])
+        result.paste(first_frame, (x_frame_offset(i), y_frame_offset(i)))
+
+    return result
+
+
 def __volume__(width: int, height: int, volume: int, fill):
     result = Image.new('L', (width, height), fill)
     draw = ImageDraw.Draw(result)
@@ -350,9 +394,20 @@ def moon_phase(width: int, height: int, phase: float):
 
     return result
 
-# if __name__ == "__main__":
-#     #     image = moon_phase(38, 40, float(sys.argv[1]))
-#     image = moon_phase(38, 40, None)
-#     image = image.point(lambda p: p * 16)
-#     # image.show()
-#     image.save("out.bmp")
+
+@cache
+def _split(text: str) -> [str]:
+    words = text.split()
+    result = []
+
+    for word in words:
+        if len(result[-1:]) == 0 or len(result[-1]) > 11:
+            result.append(word)
+        else:
+            result[-1] = "{} {}".format(result[-1], word)
+
+    return result
+
+
+if __name__ == "__main__":
+    print(_split("Cooling down with a chance of rain Friday."))

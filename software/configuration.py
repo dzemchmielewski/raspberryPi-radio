@@ -9,7 +9,7 @@ if platform.uname().machine == "x86_64":
     FULL_LOAD = False
 
 if FULL_LOAD:
-    SPLASH_SCREEN_DISPLAY = 2 * 1_000
+    SPLASH_SCREEN_DISPLAY = 1 * 1_000
 else:
     SPLASH_SCREEN_DISPLAY = 0 * 1_000
 

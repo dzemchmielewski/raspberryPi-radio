@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 
 import drawing
 import screensavers
-from assets import Assets
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
 from configuration import SPLASH_SCREEN_DISPLAY
@@ -34,15 +33,20 @@ class ShortLifeWindow(ABC):
 
 class SlideWindow(ABC):
 
-    def __init__(self, width: int, height: int, stop_time: int = 2 * SECOND, initial_delay: int = 0):
+    DIRECTION_LEFT = 'L'
+    DIRECTION_UP = 'U'
+
+    def __init__(self, width: int, height: int, stop_time=2 * SECOND, initial_delay: int = 0, direction=DIRECTION_LEFT):
         self.width = width
         self.height = height
         self.stop_time = stop_time
+        self.initial_delay = initial_delay
+        self.direction = direction
         self.in_movement = False
         self.move_step = 8
         self.position = 0
         self.last_stop = now()
-        self.initial_delay = initial_delay
+
 
     @abstractmethod
     def get_strip(self):
@@ -51,26 +55,43 @@ class SlideWindow(ABC):
     def draw(self) -> Image:
         strip = self.get_strip()
 
-        if now() > (self.last_stop + self.stop_time + self.initial_delay):
+        if self.direction == self.DIRECTION_LEFT:
+            related_size = self.width
+            related_size_index = 0
+        elif self.direction == self.DIRECTION_UP:
+            related_size = self.height
+            related_size_index = 1
+        else:
+            raise Exception("Unknown direction value: {}".format(self.direction))
+
+        if isinstance(self.stop_time, list):
+            stop_time = self.stop_time[(self.position // related_size) % len(self.stop_time)]
+        else:
+            stop_time = self.stop_time
+
+        if now() > (self.last_stop + stop_time + self.initial_delay):
             self.initial_delay = 0
             self.in_movement = True
 
-        if strip.size[0] > self.width and self.in_movement:
-            if self.position + self.width == strip.size[0]:
+        if strip.size[related_size_index] > related_size and self.in_movement:
+            if self.position + related_size == strip.size[related_size_index]:
                 self.position = 0
 
             next_move_step = self.move_step
             for i in range(0, self.move_step):
-                if (self.position + (i + 1)) % self.width == 0:
+                if (self.position + (i + 1)) % related_size == 0:
                     next_move_step = i + 1
                     break
             self.position += next_move_step
 
-            if self.position % self.width == 0:
+            if self.position % related_size == 0:
                 self.in_movement = False
                 self.last_stop = now()
 
-        return strip.crop([self.position, 0, self.position + self.width, strip.size[1]])
+        if related_size_index == 0:
+            return strip.crop([self.position, 0, self.position + self.width, strip.size[1]])
+        else:
+            return strip.crop([0, self.position, strip.size[0],  self.position + self.height])
 
 
 class TunerStatusWindow(ShortLifeWindow):
@@ -169,6 +190,17 @@ class MeteoWindow(SlideWindow):
         return drawing.create_meteo_strip(self.width, self.height, self.meteo_data)
 
 
+class DateWindow(SlideWindow):
+    def __init__(self, width: int, height: int):
+        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[6 * SECOND, 3*SECOND], direction=SlideWindow.DIRECTION_UP)
+        self.description = None
+
+    def get_strip(self):
+        currently = datetime.datetime.now()
+        text = [drawing.display_week_day(currently.weekday()) + ", " + str(currently.day), drawing.display_month(currently.month)]
+        return drawing.create_date_strip(self.width, self.height, tuple(text), self.description)
+
+
 class MainWindow:
     def __init__(self, width: int, height: int):
         self.width = width
@@ -188,6 +220,7 @@ class MainWindow:
 
         self.astro_window = AstroWindow(self.x_low - self.start_x, self.end_y - self.y_middle)
         self.meteo_window = MeteoWindow(self.end_x - self.x_up, self.y_middle - self.start_y)
+        self.date_window = DateWindow(self.x_up - self.start_x, self.y_middle - self.start_y)
 
     def draw(self, margin=8):
         result = Image.new('L', (self.width, self.height), drawing.C_BLACK)
@@ -201,11 +234,8 @@ class MainWindow:
         # horizontal line in a half:
         draw.line([(margin, self.y_middle), (self.end_x - margin, self.y_middle)], fill=drawing.C_WHITE)
 
-        # Quarter 1 - display date
-        currently = datetime.datetime.now()
-        text = [drawing.display_week_day(currently.weekday()) + ", " + str(currently.day), drawing.display_month(currently.month)]
-        q1 = drawing.text_window(self.x_up - self.start_x, tuple(text), tuple([16, 34]), is_frame=False, vertical_space=2,
-                                 fill=drawing.C_BLACK)
+        # Quarter 1 - display date & weather description
+        q1 = self.date_window.draw()
         y = round((((self.y_middle - self.start_y) - q1.size[1]) / 2))
         result.paste(q1, (self.start_x, y))
 
@@ -253,8 +283,9 @@ class DisplayManager:
     def astro(self, event: AstroData):
         self.main_window.astro_window.astro_data = event
 
-    def meteo(self, event):
+    def meteo(self, event: MeteoData):
         self.main_window.meteo_window.meteo_data = event
+        self.main_window.date_window.description = event.description
 
     def screensaver(self, event: bool):
         if event:
