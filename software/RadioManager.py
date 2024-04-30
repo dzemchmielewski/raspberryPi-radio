@@ -93,6 +93,7 @@ if __name__ == "__main__":
             KeyboardController(),
             AstroController(),
             MeteoController(),
+            WhoIsHomeController(),
         )
 
     threads = [Thread(target=x.run) for x in jobs]

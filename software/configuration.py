@@ -55,12 +55,12 @@ BTN5_PIN = 13
 DISPLAY_WIDTH = 128
 DISPLAY_HEIGHT = 96
 
-with open("external/AudD-api-token.txt") as fp:
+with open("confidential/AudD-api-token.txt") as fp:
     AUDD_API_TOKEN = fp.readline().strip()
 AUDD_URL = "https://api.audd.io/?api_token=" + AUDD_API_TOKEN
 AUDD_CLIP_DIRECTORY = "clips/"
 AUDD_CLIP_DURATION = 5 * 1_000
 
-with open("external/visualcrossing.com-api-token.txt") as fp:
+with open("confidential/visualcrossing.com-api-token.txt") as fp:
     VISUALCROSSING_TOKEN = fp.readline().strip()
 VISUALCROSSING_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Toru%C5%84"
