@@ -192,7 +192,7 @@ class MeteoWindow(SlideWindow):
 
 class DateWindow(SlideWindow):
     def __init__(self, width: int, height: int):
-        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[6 * SECOND, 3*SECOND], direction=SlideWindow.DIRECTION_UP)
+        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[10 * SECOND, 3 * SECOND, 3 * SECOND], direction=SlideWindow.DIRECTION_UP)
         self.description = None
 
     def get_strip(self):
@@ -235,6 +235,7 @@ class MainWindow:
         draw.line([(margin, self.y_middle), (self.end_x - margin, self.y_middle)], fill=drawing.C_WHITE)
 
         # Quarter 1 - display date & weather description
+        # 77x43
         q1 = self.date_window.draw()
         y = round((((self.y_middle - self.start_y) - q1.size[1]) / 2))
         result.paste(q1, (self.start_x, y))

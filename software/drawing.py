@@ -266,13 +266,15 @@ def create_meteo_strip(width: int, height: int, meteo_data: MeteoData) -> Image:
 
 @cache
 def create_date_strip(width: int, height: int, text, description, horizontally=False):
-
     frames = 1
     if description is not None:
         frames = 3
+        if isinstance(_split(description)[0], list):
+            frames += 1
 
     if horizontally:
         result = Image.new('L', (frames * width, height), C_BLACK)
+
         def x_frame_offset(i: int):
             return i * width
 
@@ -281,12 +283,12 @@ def create_date_strip(width: int, height: int, text, description, horizontally=F
 
     else:
         result = Image.new('L', (width, frames * height), C_BLACK)
+
         def x_frame_offset(i: int):
             return 0
 
         def y_frame_offset(i: int):
             return i * height
-
 
     img = text_window(width, tuple(text), tuple([20] * len(text)), is_frame=False, vertical_space=2,
                       fill=C_BLACK)
@@ -294,11 +296,19 @@ def create_date_strip(width: int, height: int, text, description, horizontally=F
     result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
 
     if description is not None:
-        i += 1
         desc = _split(description)
-        img = text_window(width, tuple(desc), tuple([13] * len(desc)), is_frame=False, vertical_space=2,
-                          fill=C_BLACK)
-        result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
+        if isinstance(desc[0], list):
+            for d in desc:
+                i += 1
+                img = text_window(width, tuple(d), tuple([13] * len(d)), is_frame=False, vertical_space=2,
+                                  fill=C_BLACK)
+                result.paste(img,
+                             (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
+        else:
+            i += 1
+            img = text_window(width, tuple(desc), tuple([13] * len(desc)), is_frame=False, vertical_space=2,
+                              fill=C_BLACK)
+            result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
 
         # Repeat first frame at the end:
         i += 1
@@ -396,7 +406,7 @@ def moon_phase(width: int, height: int, phase: float):
 
 
 @cache
-def _split(text: str) -> [str]:
+def _split(text: str) -> []:
     words = text.split()
     result = []
 
@@ -406,8 +416,12 @@ def _split(text: str) -> [str]:
         else:
             result[-1] = "{} {}".format(result[-1], word)
 
-    return result
+    if (l := len(result)) > 3:
+        return [result[0:(l // 2)], result[l // 2:]]
+    else:
+        return result
 
 
 if __name__ == "__main__":
     print(_split("Cooling down with a chance of rain Friday."))
+    print(_split("Cooling down with a chance of rain Sunday & Monday."))
