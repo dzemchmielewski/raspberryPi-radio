@@ -202,13 +202,23 @@ class MeteoWindow(SlideWindow):
 
 class DateWindow(SlideWindow):
     def __init__(self, width: int, height: int):
-        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[10 * SECOND, 2 * SECOND, 3 * SECOND], direction=SlideWindow.DIRECTION_UP)
+        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[10 * SECOND, 2 * SECOND, 2 * SECOND], direction=SlideWindow.DIRECTION_UP)
         self.description = None
 
     def get_strip(self):
         currently = datetime.datetime.now()
         text = [drawing.display_week_day(currently.weekday()) + ", " + str(currently.day), drawing.display_month(currently.month)]
         return drawing.create_date_strip(self.width, self.height, tuple(text), self.description)
+
+
+class TimeWindow(SlideWindow):
+    def __init__(self, width: int, height: int):
+        super(TimeWindow, self).__init__(width, height, stop_time=[15 * SECOND, 2 * SECOND, 2 * SECOND], direction=SlideWindow.DIRECTION_UP)
+        self.holidays = []
+
+    def get_strip(self):
+        text = [datetime.datetime.now().strftime("%H:%M")]
+        return drawing.create_time_strip(self.width, self.height, tuple(text), tuple(self.holidays))
 
 
 class MainWindow:
@@ -231,6 +241,7 @@ class MainWindow:
         self.astro_window = AstroWindow(self.x_low - self.start_x, self.end_y - self.y_middle)
         self.meteo_window = MeteoWindow(self.end_x - self.x_up, self.y_middle - self.start_y)
         self.date_window = DateWindow(self.x_up - self.start_x, self.y_middle - self.start_y)
+        self.time_window = TimeWindow(self.end_x - self.x_low, self.end_y - self.y_middle)
 
     def draw(self, margin=8):
         result = Image.new('L', (self.width, self.height), drawing.C_BLACK)
@@ -262,10 +273,9 @@ class MainWindow:
         result.paste(q3, (self.start_x, y + self.y_middle + 2))
 
         # Quarter 4 - display time
-        text = [datetime.datetime.now().strftime("%H:%M")]
-        q4 = drawing.text_window(self.end_x - self.x_low, tuple(text), tuple([34]), is_frame=False, fill=drawing.C_BLACK)
+        q4 = self.time_window.draw()
         y = round((((self.end_y - self.y_middle) - q4.size[1]) / 2))
-        result.paste(q4, (self.x_low + 1, y + self.y_middle))
+        result.paste(q4, (self.x_low + 1, y + self.y_middle + 2))
 
         return result
 
@@ -297,6 +307,9 @@ class DisplayManager:
     def meteo(self, event: MeteoData):
         self.main_window.meteo_window.meteo_data = event
         self.main_window.date_window.description = event.description
+
+    def holiday(self, event: [str]):
+        self.main_window.time_window.holidays = event
 
     def screensaver(self, event: bool):
         if event:

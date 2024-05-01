@@ -5,7 +5,8 @@ from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
     FULL_LOAD, BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN, LED_GREEN_PIN, LED_RED_PIN
 from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
-from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController
+from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController, \
+    HolidayController
 from handtests.manual_controllers import KeyboardController
 from outputs import Tuner, LEDIndicator, Display, OLEDDisplay, FileOutputDisplay
 from whoishome import WhoIsHomeController
@@ -52,6 +53,8 @@ class RadioManager(RadioItem):
             self.bus.send_event(Display.CODE, Display.EVENT_ASTRO_DATA, event)
         if (event := self.bus.consume_event(MeteoController.EVENT_METEO_DATA)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_METEO_DATA, event)
+        if (event := self.bus.consume_event(HolidayController.EVENT_HOLIDAY_DATA)) is not None:
+            self.bus.send_event(Display.CODE, Display.EVENT_HOLIDAY_DATA, event)
 
         if self.bus.consume_event(DummyController.EVENT_DUMMY) is not None:
             if self.is_screensaver:
@@ -84,7 +87,8 @@ if __name__ == "__main__":
             DummyController(BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN),
             AstroController(),
             MeteoController(),
-            WhoIsHomeController(),
+            # WhoIsHomeController(),
+            HolidayController(),
         )
     else:
         jobs = (
@@ -93,7 +97,8 @@ if __name__ == "__main__":
             KeyboardController(),
             AstroController(),
             MeteoController(),
-            WhoIsHomeController(),
+            # WhoIsHomeController(),
+            HolidayController(),
         )
 
     threads = [Thread(target=x.run) for x in jobs]

@@ -152,6 +152,7 @@ class Display(RadioItem):
     EVENT_RECOGNIZE_STATUS = "recognize"
     EVENT_ASTRO_DATA = "astro"
     EVENT_METEO_DATA = "meteo"
+    EVENT_HOLIDAY_DATA = "holiday"
     EVENT_SCREENSAVER = "screensaver"
 
     def __init__(self, loop_sleep=None):
@@ -169,6 +170,8 @@ class Display(RadioItem):
             self.manager.astro(event)
         if (event := self.bus.consume_event(Display.EVENT_METEO_DATA)) is not None:
             self.manager.meteo(event)
+        if (event := self.bus.consume_event(Display.EVENT_HOLIDAY_DATA)) is not None:
+            self.manager.holiday(event)
         if (event := self.bus.consume_event(Display.EVENT_SCREENSAVER)) is not None:
             self.manager.screensaver(event)
 

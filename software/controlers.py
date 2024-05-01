@@ -1,7 +1,9 @@
 #!/usr/bin/python
 import json
+import re
 from datetime import date, timedelta, datetime
 
+import bs4
 import requests
 from alsaaudio import Mixer
 
@@ -9,7 +11,7 @@ from bus import Bus
 from configuration import STATIONS, RT_CURRENT_STATION, VISUALCROSSING_URL, VISUALCROSSING_TOKEN
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG, \
     now, AstroData, ASTRO_CONTROLLER_LOG, DUMMY_CONTROLLER_LOG, METEO_CONTROLLER_LOG, MeteoData, \
-    MINUTE
+    MINUTE, HOLIDAY_CONTROLLER_LOG
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
@@ -248,6 +250,35 @@ class MeteoController(RadioItem):
             self.call4data()
             self.bus.send_manager_event(MeteoController.EVENT_METEO_DATA, self.data)
             self.last_broadcasted = current_time
+
+    def exit(self):
+        pass
+
+
+class HolidayController(RadioItem):
+    CODE = "holiday_ctrl"
+    EVENT_HOLIDAY_DATA = "holiday_data"
+
+    def __init__(self):
+        super(HolidayController, self).__init__(Bus(HOLIDAY_CONTROLLER_LOG, HolidayController.CODE), 2)
+        self.last_broadcasted = None
+        self.url = "https://www.kalbi.pl/"
+
+    def call4data(self) -> [str]:
+        self.bus.log("External call")
+        response = requests.get(self.url)
+        soup = bs4.BeautifulSoup(response.text, features="html.parser")
+        s = soup.get_text('|', strip=True)
+        f = re.findall(re.escape("Nietypowe święta:|") + "(.*)" + re.escape("|Przysłowi"), s)[0]
+        self.bus.log("External call completed")
+        return f.split("|")
+
+    def loop(self):
+        today = date.today()
+
+        if self.last_broadcasted is None or self.last_broadcasted != today:
+            self.bus.send_manager_event(HolidayController.EVENT_HOLIDAY_DATA, self.call4data())
+            self.last_broadcasted = today
 
     def exit(self):
         pass

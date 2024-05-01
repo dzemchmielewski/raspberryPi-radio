@@ -1,9 +1,16 @@
+import random
+import re
 import sys
+import urllib
 from datetime import datetime
 from functools import cache
 from operator import itemgetter
 
+import bs4
+import nltk
+import requests
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from bs4 import BeautifulSoup
 
 from assets import Assets
 from entities import AstroData, time_f, MeteoData
@@ -164,6 +171,8 @@ def time(width):
 @cache
 def text_window(width, text=[], suggested_font_size=[], vertical_space=6, horizontal_space=6, is_frame=True, fill=C_BLACK + 3,
                 font_path=Assets.font_path, debug=False) -> Image:
+    if debug:
+        print("width = {}".format(width))
     result = Image.new('L', (width, 0), C_BLACK)
     draw = ImageDraw.Draw(result)
 
@@ -323,6 +332,50 @@ def create_date_strip(width: int, height: int, text, description, horizontally=F
     return result
 
 
+@cache
+def create_time_strip(width: int, height: int, text, holidays: [str], horizontally=False):
+    frames = 1
+    if holidays is not None and len(holidays) > 0:
+        frames = 3
+
+    if horizontally:
+        result = Image.new('L', (frames * width, height), C_BLACK)
+
+        def x_frame_offset(i: int):
+            return i * width
+
+        def y_frame_offset(i: int):
+            return 0
+
+    else:
+        result = Image.new('L', (width, frames * height), C_BLACK)
+
+        def x_frame_offset(i: int):
+            return 0
+
+        def y_frame_offset(i: int):
+            return i * height
+
+    img = text_window(width, tuple(text), tuple([34]), is_frame=False, fill=C_BLACK, debug=False)
+
+    i = 0
+    result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
+
+    if holidays is not None and len(holidays) > 0:
+        desc = _split(holidays[random.randint(0, len(holidays) - 1)], 13, True)
+
+        i += 1
+        img = text_window(width, tuple(desc), tuple([13] * len(desc)), is_frame=False, vertical_space=2, fill=C_BLACK)
+        result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
+
+        # Repeat first frame at the end:
+        i += 1
+        first_frame = result.crop([0, 0, width, height])
+        result.paste(first_frame, (x_frame_offset(i), y_frame_offset(i)))
+
+    return result
+
+
 def __volume__(width: int, height: int, volume: int, fill):
     result = Image.new('L', (width, height), fill)
     draw = ImageDraw.Draw(result)
@@ -411,17 +464,17 @@ def moon_phase(width: int, height: int, phase: float):
 
 
 @cache
-def _split(text: str) -> []:
+def _split(text: str, line_stops_after=11, one_frame_only=False) -> []:
     words = text.split()
     result = []
 
     for word in words:
-        if len(result[-1:]) == 0 or len(result[-1]) > 11:
+        if len(result[-1:]) == 0 or len(result[-1]) > line_stops_after:
             result.append(word)
         else:
             result[-1] = "{} {}".format(result[-1], word)
 
-    if (l := len(result)) > 3:
+    if (l := len(result)) > 3 and not one_frame_only:
         return [result[0:(l // 2)], result[l // 2:]]
     else:
         return result
@@ -431,7 +484,9 @@ if __name__ == "__main__":
     print(_split("Cooling down with a chance of rain Friday."))
     print(_split("Cooling down with a chance of rain Sunday & Monday."))
 
-values = [0, 15, 20, 45, 180, 190, 225, 300, 350]
-compass_sectors = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"]
-for v in values:
-    print("{} -> {}".format(v, compass_sectors[round(v / 22.5)]))
+    values = [0, 15, 20, 45, 180, 190, 225, 300, 350]
+    compass_sectors = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"]
+    for v in values:
+        print("{} -> {}".format(v, compass_sectors[round(v / 22.5)]))
+
+
