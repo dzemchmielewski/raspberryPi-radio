@@ -8,8 +8,8 @@ from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerSta
 from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController, \
     HolidayController
 from handtests.manual_controllers import KeyboardController
-from outputs import Tuner, LEDIndicator, Display, OLEDDisplay, FileOutputDisplay
-from whoishome import WhoIsHomeController
+from outputs import LEDIndicator, Display, OLEDDisplay, FileOutputDisplay
+from tuner import Tuner
 
 
 class RadioManager(RadioItem):
