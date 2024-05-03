@@ -283,7 +283,7 @@ def create_date_strip(width: int, height: int, text, description, horizontally=F
     frames = 1
     if description is not None:
         frames = 3
-        if isinstance(_split(description)[0], list):
+        if isinstance(split(description)[0], list):
             frames += 1
 
     if horizontally:
@@ -310,7 +310,7 @@ def create_date_strip(width: int, height: int, text, description, horizontally=F
     result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
 
     if description is not None:
-        desc = _split(description)
+        desc = split(description)
         if isinstance(desc[0], list):
             for d in desc:
                 i += 1
@@ -362,7 +362,7 @@ def create_time_strip(width: int, height: int, text, holidays: [str], horizontal
     result.paste(img, (x_frame_offset(i) + round((width - img.size[0]) / 2), y_frame_offset(i) + round((height - img.size[1]) / 2)))
 
     if holidays is not None and len(holidays) > 0:
-        desc = _split(holidays[random.randint(0, len(holidays) - 1)], 13, True)
+        desc = split(holidays[random.randint(0, len(holidays) - 1)], 13, True)
 
         i += 1
         img = text_window(width, tuple(desc), tuple([13] * len(desc)), is_frame=False, vertical_space=2, fill=C_BLACK)
@@ -464,7 +464,7 @@ def moon_phase(width: int, height: int, phase: float):
 
 
 @cache
-def _split(text: str, line_stops_after=11, one_frame_only=False) -> []:
+def split(text: str, line_stops_after=11, one_frame_only=False) -> []:
     words = text.split()
     result = []
 
@@ -481,8 +481,8 @@ def _split(text: str, line_stops_after=11, one_frame_only=False) -> []:
 
 
 if __name__ == "__main__":
-    print(_split("Cooling down with a chance of rain Friday."))
-    print(_split("Cooling down with a chance of rain Sunday & Monday."))
+    print(split("Cooling down with a chance of rain Friday."))
+    print(split("Cooling down with a chance of rain Sunday & Monday."))
 
     values = [0, 15, 20, 45, 180, 190, 225, 300, 350]
     compass_sectors = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"]

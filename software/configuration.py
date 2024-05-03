@@ -65,3 +65,6 @@ AUDD_CLIP_DURATION = 5 * 1_000
 with open("confidential/visualcrossing.com-api-token.txt") as fp:
     VISUALCROSSING_TOKEN = fp.readline().strip()
 VISUALCROSSING_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Toru%C5%84"
+
+VLC_HOST = "localhost"
+VLC_PORT = 4444

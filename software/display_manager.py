@@ -125,6 +125,22 @@ class TunerStatusWindow(ShortLifeWindow):
         return drawing.text_window(self.width, tuple(self.text), tuple([12, 36]))
 
 
+class TunerInfoWindow(ShortLifeWindow):
+
+    def __init__(self, info: str, width: int):
+        super(TunerInfoWindow, self).__init__(width=width, life_span=10 * SECOND)
+        if " - " in info:
+            self.text = info.split(" - ")
+        else:
+            self.text = drawing.split(info, 16, one_frame_only = True)
+
+    def is_completed(self) -> bool:
+        return self.is_life_span_passed()
+
+    def draw(self) -> Image:
+        return drawing.text_window(self.width, tuple(self.text), tuple([30] * len(self.text)))
+
+
 class VolumeWindow(ShortLifeWindow):
 
     def __init__(self, volume: VolumeEvent, width: int):
@@ -140,7 +156,7 @@ class VolumeWindow(ShortLifeWindow):
 
 class RecognizeWindow(ShortLifeWindow):
     def __init__(self, status: RecognizeStatus, width):
-        super(RecognizeWindow, self).__init__(life_span=10 * 1_000, width=width)
+        super(RecognizeWindow, self).__init__(life_span=10 * SECOND, width=width)
         self.status = status
         self.text = []
         self.size = [16, 16, 14, 12]
@@ -300,6 +316,9 @@ class DisplayManager:
     def tuner_status(self, event):
         self.station = event.station
         self.add_window(TunerStatusWindow(event, self.width - 10))
+
+    def tuner_play_info(self, event):
+        self.add_window(TunerInfoWindow(event, self.width - 10))
 
     def astro(self, event: AstroData):
         self.main_window.astro_window.astro_data = event

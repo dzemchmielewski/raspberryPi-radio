@@ -56,6 +56,10 @@ class RadioManager(RadioItem):
         if (event := self.bus.consume_event(HolidayController.EVENT_HOLIDAY_DATA)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_HOLIDAY_DATA, event)
 
+        if (event := self.bus.consume_event(Tuner.EVENT_PLAY_INFO)) is not None:
+            self.bus.send_event(Display.CODE, Display.EVENT_TUNER_PLAY_INFO, event)
+            self.last_event = now()
+
         if self.bus.consume_event(DummyController.EVENT_DUMMY) is not None:
             if self.is_screensaver:
                 self.last_event = now()
@@ -87,7 +91,6 @@ if __name__ == "__main__":
             DummyController(BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN),
             AstroController(),
             MeteoController(),
-            # WhoIsHomeController(),
             HolidayController(),
         )
     else:
@@ -97,7 +100,6 @@ if __name__ == "__main__":
             KeyboardController(),
             AstroController(),
             MeteoController(),
-            # WhoIsHomeController(),
             HolidayController(),
         )
 

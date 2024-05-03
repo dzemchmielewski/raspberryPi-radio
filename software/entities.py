@@ -173,9 +173,10 @@ class RecognizeStatus:
 
 class RadioItem(ABC):
 
-    def __init__(self, bus, loop_sleep=0.2):
+    def __init__(self, bus, loop_sleep=0.2, on_run_callback=None):
         self.bus = bus
         self.loop_sleep = loop_sleep
+        self.on_run_callback = on_run_callback
         self.bus.log("START (loop: " + str(self.loop_sleep) + ")")
 
     @abstractmethod
@@ -186,7 +187,9 @@ class RadioItem(ABC):
     def exit(self):
         pass
 
-    def run(self, ):
+    def run(self):
+        if self.on_run_callback is not None:
+            self.on_run_callback()
         while self.bus.consume_event(EVENT_EXIT) is None:
             self.loop()
             sleep(self.loop_sleep)
