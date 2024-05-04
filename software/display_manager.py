@@ -7,7 +7,7 @@ import drawing
 import screensavers
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../."))
-from configuration import SPLASH_SCREEN_DISPLAY
+from configuration import SPLASH_SCREEN_DISPLAY, SELECT_STATION_COMMIT_TIME, STATIONS
 from entities import TunerStatus, Status, RecognizeStatus, RecognizeState, now, AstroData, VolumeEvent, MeteoData, SECOND
 from PIL import Image, ImageDraw
 
@@ -123,6 +123,23 @@ class TunerStatusWindow(ShortLifeWindow):
 
     def draw(self) -> Image:
         return drawing.text_window(self.width, tuple(self.text), tuple([12, 36]))
+
+
+class SelectStationWindow(ShortLifeWindow):
+
+    def __init__(self, station: int, width: int):
+        super(SelectStationWindow, self).__init__(width=width, life_span=SELECT_STATION_COMMIT_TIME)
+        length = len(STATIONS)
+        start = ((station - 2) + length) % length
+        self.text = []
+        for i in range(start, start + (2*2) + 1):
+            self.text.append(STATIONS[i % length].name)
+
+    def is_completed(self) -> bool:
+        return self.is_life_span_passed()
+
+    def draw(self) -> Image:
+        return drawing.select_station(self.width, tuple(self.text))
 
 
 class TunerInfoWindow(ShortLifeWindow):
@@ -319,6 +336,9 @@ class DisplayManager:
 
     def tuner_play_info(self, event):
         self.add_window(TunerInfoWindow(event, self.width - 10))
+
+    def select_station(self, event):
+        self.add_window(SelectStationWindow(event, self.width - 10))
 
     def astro(self, event: AstroData):
         self.main_window.astro_window.astro_data = event

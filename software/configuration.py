@@ -2,7 +2,7 @@
 import os.path
 import platform
 
-from entities import Station
+from entities import Station, SECOND
 
 FULL_LOAD = True
 if platform.uname().machine == "x86_64":
@@ -29,6 +29,8 @@ STATIONS = (
 #    Station("Loca FM", "LOCFM", "http://s3.we4stream.com:8045/liv?2"),
 #    Station("", "", ""),
 )
+
+SELECT_STATION_COMMIT_TIME = 1.5 * SECOND
 
 RT_CURRENT_STATION = "rt/current_station"
 CACHE_PERSISTENCE_DIR = "persist/"

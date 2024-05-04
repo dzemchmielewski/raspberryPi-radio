@@ -53,6 +53,7 @@ class Display(RadioItem):
     EVENT_VOLUME = "volume"
     EVENT_TUNER_STATUS = "status"
     EVENT_TUNER_PLAY_INFO = "playinfo"
+    EVENT_SELECT_STATION = "select_station"
     EVENT_RECOGNIZE_STATUS = "recognize"
     EVENT_ASTRO_DATA = "astro"
     EVENT_METEO_DATA = "meteo"
@@ -68,6 +69,8 @@ class Display(RadioItem):
             self.manager.volume(event)
         if (event := self.bus.consume_event(Display.EVENT_TUNER_STATUS)) is not None:
             self.manager.tuner_status(event)
+        if (event := self.bus.consume_event(Display.EVENT_SELECT_STATION)) is not None:
+            self.manager.select_station(event)
         if (event := self.bus.consume_event(Display.EVENT_TUNER_PLAY_INFO)) is not None:
             self.manager.tuner_play_info(event)
         if (event := self.bus.consume_event(Display.EVENT_RECOGNIZE_STATUS)) is not None:

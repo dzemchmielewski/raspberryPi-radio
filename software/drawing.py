@@ -1,16 +1,9 @@
 import random
-import re
-import sys
-import urllib
 from datetime import datetime
 from functools import cache
 from operator import itemgetter
 
-import bs4
-import nltk
-import requests
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
-from bs4 import BeautifulSoup
 
 from assets import Assets
 from entities import AstroData, time_f, MeteoData
@@ -74,6 +67,19 @@ def dimension(draw, text, font):
     (x0, y0, x1, y1) = draw.textbbox((0, 0), text, font=font, anchor="lt")
     # print(text + " => " + str((x0, x1, y0, y1)))
     return x1 - x0, y1 - y0
+
+
+def adjust_fonts(draw, width: int, text: [], fonts: [], horizontal_space: int, debug=False):
+    dims = []
+    for i in range(0, len(text)):
+        dim = dimension(draw, text[i], fonts[i])
+        while (dim[0] + horizontal_space) > width:
+            fonts[i] = fonts[i].font_variant(size=fonts[i].size - 1)
+            dim = dimension(draw, text[i], fonts[i])
+        if debug:
+            print("FS(" + str(i) + ") = " + str(fonts[i].size))
+        dims += [dim]
+    return dims, fonts
 
 
 def frame(width, height):
@@ -170,7 +176,7 @@ def time(width):
 
 @cache
 def text_window(width, text=[], suggested_font_size=[], vertical_space=6, horizontal_space=6, is_frame=True, fill=C_BLACK + 3,
-                font_path=Assets.font_path, debug=False) -> Image:
+                font_path=Assets.font_path, fixed_width=False, debug=False) -> Image:
     if debug:
         print("width = {}".format(width))
     result = Image.new('L', (width, 0), C_BLACK)
@@ -180,17 +186,12 @@ def text_window(width, text=[], suggested_font_size=[], vertical_space=6, horizo
     for x in suggested_font_size:
         fonts += [ImageFont.truetype(font_path, x)]
 
-    dims = []
-    for i in range(0, len(text)):
-        dim = dimension(draw, text[i], fonts[i])
-        while (dim[0] + horizontal_space) > width:
-            fonts[i] = fonts[i].font_variant(size=fonts[i].size - 1)
-            dim = dimension(draw, text[i], fonts[i])
-        if debug:
-            print("FS(" + str(i) + ") = " + str(fonts[i].size))
-        dims += [dim]
+    dims, fonts = adjust_fonts(draw, width, text, fonts, horizontal_space, debug=debug)
 
-    new_width = max(dims, key=itemgetter(0))[0] + horizontal_space
+    if fixed_width:
+        new_width = width
+    else:
+        new_width = max(dims, key=itemgetter(0))[0] + horizontal_space
     new_height = sum(y for x, y in dims[0:len(dims)]) + ((len(dims) + 1) * vertical_space)
 
     result = result.resize((new_width, new_height))
@@ -202,6 +203,35 @@ def text_window(width, text=[], suggested_font_size=[], vertical_space=6, horizo
     for i in range(0, len(text)):
         draw.text((round((new_width - dims[i][0]) / 2), vertical_space * (i + 1) + sum(y for x, y in dims[0:i])), text[i],
                   font=fonts[i], fill=C_WHITE, anchor="lt")
+
+    return result
+
+
+@cache
+def select_station(width, text=[], vertical_space=6, horizontal_space=4, font_path=Assets.font_path) -> Image:
+    result = Image.new('L', (width, 0), C_BLACK)
+    draw = ImageDraw.Draw(result)
+
+    fonts = [ImageFont.truetype(font_path, 12)] * len(text)
+    dims, fonts = adjust_fonts(draw, width, text, fonts, horizontal_space, debug=True)
+
+    new_height = sum(y for x, y in dims[0:len(dims)]) + ((len(dims) + 1) * vertical_space)
+
+    result = result.resize((width, new_height))
+    draw = ImageDraw.Draw(result)
+
+    draw.rounded_rectangle([(0, 0), (width - 1, new_height - 1)], outline=C_WHITE - 5, width=4, radius=3, fill=C_WHITE)
+
+    for i in range(0, len(text)):
+        if len(text) // 2 == i:
+            rec_from = (0 + 2, vertical_space * (i + 1) + sum(y for x, y in dims[0:i]) - (vertical_space // 2))
+            rec_to = (width - 1 - 2, vertical_space * (i + 1 + 1) + sum(y for x, y in dims[0:i + 1]) - (vertical_space // 2))
+            draw.rounded_rectangle((rec_from, rec_to), radius=5, fill=C_BLACK + 5)
+            draw.text((round((width - dims[i][0]) / 2), vertical_space * (i + 1) + sum(y for x, y in dims[0:i])), text[i],
+                      font=fonts[i], fill=C_WHITE, anchor="lt")
+        else:
+            draw.text((round((width - dims[i][0]) / 2), vertical_space * (i + 1) + sum(y for x, y in dims[0:i])), text[i],
+                      font=fonts[i], fill=C_BLACK, anchor="lt")
 
     return result
 
@@ -488,5 +518,3 @@ if __name__ == "__main__":
     compass_sectors = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"]
     for v in values:
         print("{} -> {}".format(v, compass_sectors[round(v / 22.5)]))
-
-

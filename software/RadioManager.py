@@ -4,10 +4,10 @@ from threading import Thread
 from bus import Bus
 from configuration import STATIONS, RE2_LEFT_PIN, RE2_RIGHT_PIN, RE2_CLICK_PIN, RE1_CLICK_PIN, RE1_RIGHT_PIN, RE1_LEFT_PIN, \
     FULL_LOAD, BTN2_PIN, BTN3_PIN, BTN4_PIN, BTN5_PIN, LED_GREEN_PIN, LED_RED_PIN
-from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now
+from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerStatus, RADIO_LOG, now, MINUTE
 from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController, \
     HolidayController
-from handtests.manual_controllers import KeyboardController
+from handtests.manual_controllers import KeyboardController, ManualStationController, ManualVolumeController
 from outputs import LEDIndicator, Display, OLEDDisplay, FileOutputDisplay
 from tuner import Tuner
 
@@ -18,13 +18,17 @@ class RadioManager(RadioItem):
         super(RadioManager, self).__init__(Bus(RADIO_LOG, RADIO_MANAGER_CODE), loop_sleep=loop_sleep)
         self.current_station = None
         self.last_event = now()
-        self.screensaver_activation_time = 5 * 60 * 1_000
+        self.screensaver_activation_time = 5 * MINUTE
         self.is_screensaver = False
 
     def exit(self):
         pass
 
     def loop(self):
+        if (event := self.bus.consume_event(StationController.EVENT_SELECT_STATION)) is not None:
+            self.bus.send_event(Display.CODE, Display.EVENT_SELECT_STATION, event)
+            self.last_event = now()
+
         if (event := self.bus.consume_event(StationController.EVENT_STATION)) is not None:
             self.current_station = event
             self.bus.send_event(LEDIndicator.CODE, LEDIndicator.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
@@ -97,10 +101,12 @@ if __name__ == "__main__":
         jobs = (
             FileOutputDisplay(0.1),
             Tuner(),
-            KeyboardController(),
-            AstroController(),
-            MeteoController(),
-            HolidayController(),
+            station_ctr := ManualStationController(),
+            volume_ctr := ManualVolumeController(),
+            KeyboardController(station_ctr, volume_ctr),
+            #AstroController(),
+            #MeteoController(),
+            #HolidayController(),
         )
 
     threads = [Thread(target=x.run) for x in jobs]

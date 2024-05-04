@@ -7,10 +7,10 @@ from entities import RadioItem
 class KeyboardController(RadioItem):
     CODE = "keyboard"
 
-    def __init__(self):
+    def __init__(self, station_ctr, volume_ctr):
         super(KeyboardController, self).__init__(Bus("KBRD-CTR", KeyboardController.CODE))
-        self.volume_ctrl = ManualVolumeController()
-        self.station_ctrl = ManualStationController()
+        self.volume_ctrl = volume_ctr
+        self.station_ctrl = station_ctr
 
     def loop(self):
         some_input = input(" STATION (type: up, down, r)  VOLUME (type: vup, vdown, vmute) SCREEN (type: ss) >> \n")
@@ -37,8 +37,7 @@ class KeyboardController(RadioItem):
                 print("Unrecognized action!")
 
     def exit(self):
-        self.volume_ctrl.bus.exit()
-        self.station_ctrl.bus.exit()
+        pass
 
 
 class ManualStationController(AbstractStationController):

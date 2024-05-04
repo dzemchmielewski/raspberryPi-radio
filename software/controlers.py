@@ -8,16 +8,17 @@ import requests
 from alsaaudio import Mixer
 
 from bus import Bus
-from configuration import STATIONS, RT_CURRENT_STATION, VISUALCROSSING_URL, VISUALCROSSING_TOKEN
+from configuration import STATIONS, RT_CURRENT_STATION, VISUALCROSSING_URL, VISUALCROSSING_TOKEN, SELECT_STATION_COMMIT_TIME
 from entities import RadioItem, VolumeStatus, VolumeEvent, STATION_CONTROLLER_LOG, VOLUME_CONTROLLER_LOG, RECOGNIZE_CONTROLLER_LOG, \
     now, AstroData, ASTRO_CONTROLLER_LOG, DUMMY_CONTROLLER_LOG, METEO_CONTROLLER_LOG, MeteoData, \
-    MINUTE, HOLIDAY_CONTROLLER_LOG
+    MINUTE, HOLIDAY_CONTROLLER_LOG, SECOND
 from hardware import RotaryEncoder, RotaryButton, Button
 
 
 class AbstractStationController(RadioItem):
     CODE = "station_ctrl"
     EVENT_STATION = "station"
+    EVENT_SELECT_STATION = "select"
 
     def __init__(self):
         super(AbstractStationController, self).__init__(Bus(STATION_CONTROLLER_LOG, AbstractStationController.CODE))
@@ -28,25 +29,29 @@ class AbstractStationController(RadioItem):
             self.bus.set(RT_CURRENT_STATION, self.current_station)
         else:
             self.current_station = saved_station
+        self.select_station = self.current_station
+        self.action_time = None
         self.bus.send_manager_event(AbstractStationController.EVENT_STATION, self.current_station)
 
     def rotated(self, direction):
         if direction == RotaryEncoder.DIRECTION_RIGHT:
-            if self.current_station + 1 < self.stations_count:
-                self.current_station = self.current_station + 1
+            if self.select_station + 1 < self.stations_count:
+                self.select_station = self.select_station + 1
             else:
-                self.current_station = 0
-            self.bus.send_manager_event(AbstractStationController.EVENT_STATION, self.current_station)
+                self.select_station = 0
         else:  # direction == RotaryEncoder.DIRECTION_LEFT
-            if self.current_station - 1 >= 0:
-                self.current_station = self.current_station - 1
+            if self.select_station - 1 >= 0:
+                self.select_station = self.select_station - 1
             else:
-                self.current_station = self.stations_count - 1
-            self.bus.send_manager_event(AbstractStationController.EVENT_STATION, self.current_station)
-        self.bus.set(RT_CURRENT_STATION, self.current_station)
+                self.select_station = self.stations_count - 1
+        self.action_time = now()
+        self.bus.send_manager_event(AbstractStationController.EVENT_SELECT_STATION, self.select_station)
 
     def loop(self):
-        pass
+        if self.current_station != self.select_station and now() > self.action_time + SELECT_STATION_COMMIT_TIME:
+            self.current_station = self.select_station
+            self.bus.send_manager_event(AbstractStationController.EVENT_STATION, self.current_station)
+            self.bus.set(RT_CURRENT_STATION, self.current_station)
 
     def exit(self):
         pass
