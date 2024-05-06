@@ -235,7 +235,7 @@ class MeteoWindow(SlideWindow):
 
 class DateWindow(SlideWindow):
     def __init__(self, width: int, height: int):
-        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[10 * SECOND, 2 * SECOND, 2 * SECOND], direction=SlideWindow.DIRECTION_UP)
+        super(DateWindow, self).__init__(width, height, initial_delay=0.7 * SECOND, stop_time=[12 * SECOND, 3 * SECOND, 3 * SECOND], direction=SlideWindow.DIRECTION_UP)
         self.description = None
 
     def get_strip(self):

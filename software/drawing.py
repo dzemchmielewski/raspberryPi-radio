@@ -213,7 +213,7 @@ def select_station(width, text=[], vertical_space=6, horizontal_space=4, font_pa
     draw = ImageDraw.Draw(result)
 
     fonts = [ImageFont.truetype(font_path, 12)] * len(text)
-    dims, fonts = adjust_fonts(draw, width, text, fonts, horizontal_space, debug=True)
+    dims, fonts = adjust_fonts(draw, width, text, fonts, horizontal_space, debug=False)
 
     new_height = sum(y for x, y in dims[0:len(dims)]) + ((len(dims) + 1) * vertical_space)
 

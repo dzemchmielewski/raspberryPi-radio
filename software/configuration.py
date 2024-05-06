@@ -30,7 +30,7 @@ STATIONS = (
 #    Station("", "", ""),
 )
 
-SELECT_STATION_COMMIT_TIME = 1.5 * SECOND
+SELECT_STATION_COMMIT_TIME = 1.7 * SECOND
 
 RT_CURRENT_STATION = "rt/current_station"
 CACHE_PERSISTENCE_DIR = "persist/"
