@@ -17,9 +17,10 @@ from entities import RadioItem, TUNER_OUTPUT_LOG, TunerStatus, RecognizeStatus, 
 
 class Player:
 
-    def __init__(self):
+    def __init__(self, bus: Bus):
         self.host = VLC_HOST
         self.port = VLC_PORT
+        self.bus = bus
         # os.environ["VLC_VERBOSE"] = "3"
         self.pro = subprocess.Popen(shlex.split("/usr/bin/cvlc -I rc  --rc-host={}:{}".format(self.host, self.port)),
                                     stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
@@ -38,7 +39,7 @@ class Player:
                 self.vlc_client.connect((self.host, self.port))
                 successfully_connected = True
             except ConnectionRefusedError:
-                sleep(0.1)
+                sleep(0.3)
                 attempts += 1
 
         if not successfully_connected:
@@ -55,7 +56,20 @@ class Player:
         if self.vlc_client is None:
             self._connect()
 
-        self.vlc_client.send((cmd + "\n").encode())
+        try:
+            self.vlc_client.send((cmd + "\n").encode())
+        except BrokenPipeError as e:
+            self.bus.log("BrokenPipeError while sending command: '{}'. Trying to reconnect and resend. Error: {}".format(cmd, e))
+            try:
+                self.vlc_client.close()
+            except Exception:
+                pass
+            try:
+                self._connect()
+            except Exception as e:
+                self.bus.log("Reconnecting failed: {}".format(e))
+                raise e
+            self.vlc_client.send((cmd + "\n").encode())
 
         if read_response:
             data = ""
@@ -80,7 +94,11 @@ class Player:
         return None
 
     def is_playing(self):
-        return self._vlc_cmd("is_playing")[0].strip() == "1"
+        try:
+            return self._vlc_cmd("is_playing")[0].strip() == "1"
+        except ConnectionRefusedError as e:
+            self.bus.log("ConnectionRefusedError when calling 'is_playing'. Resuming normal operation with 'False' result. Error: e".format(e))
+            return False
 
     def exit(self):
         self._vlc_cmd("shutdown", read_response=False)
@@ -98,7 +116,7 @@ class Tuner(RadioItem):
 
     def __init__(self):
         super(Tuner, self).__init__(Bus(TUNER_OUTPUT_LOG, Tuner.CODE))
-        self.player = Player()
+        self.player = Player(self.bus)
         self.is_playing = False
         self.current_station = None
         self.info = None
