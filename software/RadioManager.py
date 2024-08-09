@@ -8,7 +8,7 @@ from entities import RADIO_MANAGER_CODE, Status, EVENT_EXIT, RadioItem, TunerSta
 from controlers import StationController, VolumeController, RecognizeController, AstroController, DummyController, MeteoController, \
     HolidayController
 from handtests.manual_controllers import KeyboardController, ManualStationController, ManualVolumeController
-from outputs import LEDIndicator, Display, OLEDDisplay, FileOutputDisplay
+from outputs import LEDIndicator, Display, OLEDDisplay, FileOutputDisplay, RadioStatusTrack
 from tuner import Tuner
 
 
@@ -34,10 +34,12 @@ class RadioManager(RadioItem):
             self.bus.send_event(LEDIndicator.CODE, LEDIndicator.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_STATUS, Status(TunerStatus.UNKNOWN, STATIONS[event]))
             self.bus.send_event(Tuner.CODE, Tuner.EVENT_STATION, STATIONS[event])
+            self.bus.send_event(RadioStatusTrack.CODE, RadioStatusTrack.EVENT_STATION, STATIONS[event])
             self.last_event = now()
 
         if (event := self.bus.consume_event(VolumeController.EVENT_VOLUME)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_VOLUME, event)
+            self.bus.send_event(RadioStatusTrack.CODE, RadioStatusTrack.EVENT_VOLUME, event.current_status)
             self.last_event = now()
 
         if (event := self.bus.consume_event(Tuner.EVENT_PLAY_STATUS)) is not None:
@@ -62,6 +64,7 @@ class RadioManager(RadioItem):
 
         if (event := self.bus.consume_event(Tuner.EVENT_PLAY_INFO)) is not None:
             self.bus.send_event(Display.CODE, Display.EVENT_TUNER_PLAY_INFO, event)
+            self.bus.send_event(RadioStatusTrack.CODE, RadioStatusTrack.EVENT_PLAY_INFO, event)
             self.last_event = now()
 
         if self.bus.consume_event(DummyController.EVENT_DUMMY) is not None:
@@ -96,6 +99,7 @@ if __name__ == "__main__":
             AstroController(),
             MeteoController(),
             HolidayController(),
+            RadioStatusTrack(),
         )
     else:
         jobs = (
@@ -104,6 +108,7 @@ if __name__ == "__main__":
             station_ctr := ManualStationController(),
             volume_ctr := ManualVolumeController(),
             KeyboardController(station_ctr, volume_ctr),
+            RadioStatusTrack(),
             #AstroController(),
             #MeteoController(),
             #HolidayController(),

@@ -1,8 +1,9 @@
 #!/usr/bin/python
+import json
 
 from bus import Bus
 from configuration import FULL_LOAD, DISPLAY_WIDTH, DISPLAY_HEIGHT
-from entities import TunerStatus, RadioItem,LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, RecognizeState
+from entities import TunerStatus, RadioItem,LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, RecognizeState, TRACK_OUTPUT_LOG
 from display_manager import DisplayManager
 
 if FULL_LOAD:
@@ -114,3 +115,39 @@ class FileOutputDisplay(Display):
         image = self.manager.display()
         image = image.point(lambda p: p * 16)
         image.save("out.bmp")
+
+
+class RadioStatusTrack(RadioItem):
+    CODE = "track"
+    EVENT_STATION = "station"
+    EVENT_VOLUME = "volume"
+    EVENT_PLAY_INFO = "playinfo"
+
+    def __init__(self):
+        super(RadioStatusTrack, self).__init__(Bus(TRACK_OUTPUT_LOG, RadioStatusTrack.CODE))
+
+    def exit(self):
+        pass
+
+    def loop(self):
+        if (event := self.bus.consume_event(RadioStatusTrack.EVENT_STATION)) is not None:
+            self.bus.set_value("radio/station", json.dumps(event.__dict__))
+        if (event := self.bus.consume_event(RadioStatusTrack.EVENT_VOLUME)) is not None:
+            self.bus.set_value("radio/volume", json.dumps(event.__dict__))
+        if (event := self.bus.consume_event(RadioStatusTrack.EVENT_PLAY_INFO)) is not None:
+            self.bus.set_value("radio/playinfo", json.dumps({"playinfo": event}))
+
+
+# # # TODO external monitoring for home control center
+# import pylibmc
+# import time
+# mc = pylibmc.Client(["127.0.0.1"], binary=True,behaviors={"tcp_nodelay": True,"ketama": True})
+# while True:
+#     mc.get("radio/station")
+#     mc.get("radio/volume")
+#     mc.get("radio/playinfo")
+#     time.sleep(1)
+#
+# ...
+# '{"name": "Radio Nowy Swiat", "code": "RNS", "url": "http://stream.rcs.revma.com/ypqt40u0x1zuv"}'
+# ...

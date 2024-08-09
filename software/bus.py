@@ -68,12 +68,7 @@ class Bus:
     def send_manager_event(self, name, event):
         self.send_event(RADIO_MANAGER_CODE, name, event)
 
-    def set_configuration(self, name, value):
+    def set_value(self, name, value):
         with self.pool.reserve() as mc:
             return mc.set(name, value)
-
-    def get_configuration(self, name, value):
-        with self.pool.reserve() as mc:
-            return mc.get(name)
-
 
