@@ -2,9 +2,10 @@
 import json
 
 from bus import Bus
-from configuration import FULL_LOAD, DISPLAY_WIDTH, DISPLAY_HEIGHT
+from configuration import FULL_LOAD, DISPLAY_WIDTH, DISPLAY_HEIGHT, MQTT_USERNAME, MQTT_PASSWORD, MQTT_HOST, MQTT_PORT, MQTT_TOPIC
 from entities import TunerStatus, RadioItem,LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, RecognizeState, TRACK_OUTPUT_LOG
 from display_manager import DisplayManager
+import paho.mqtt.client as mqtt
 
 if FULL_LOAD:
     from hardware import LED
@@ -122,32 +123,36 @@ class RadioStatusTrack(RadioItem):
     EVENT_STATION = "station"
     EVENT_VOLUME = "volume"
     EVENT_PLAY_INFO = "playinfo"
+    MQTT_LAST_WILL = json.dumps({"live": False})
 
     def __init__(self):
-        super(RadioStatusTrack, self).__init__(Bus(TRACK_OUTPUT_LOG, RadioStatusTrack.CODE))
+        super(RadioStatusTrack, self).__init__(Bus(TRACK_OUTPUT_LOG, RadioStatusTrack.CODE), loop_sleep=2)
+        self.mqttc = mqtt.Client("radio", protocol=mqtt.MQTTv5)
+        self.mqttc.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+        self.mqttc.will_set(MQTT_TOPIC, self.MQTT_LAST_WILL)
+        self.mqttc.connect(MQTT_HOST, MQTT_PORT)
+        self.mqttc.loop_start()
 
     def exit(self):
-        pass
+        self.mqttc.publish(MQTT_TOPIC, self.MQTT_LAST_WILL)
+        self.mqttc.disconnect()
+        self.mqttc.loop_stop()
 
     def loop(self):
+        need_publishing = False
         if (event := self.bus.consume_event(RadioStatusTrack.EVENT_STATION)) is not None:
-            self.bus.set_value("radio/station", json.dumps(event.__dict__))
+            self.bus.set_value("radio/station", event.__dict__)
+            need_publishing = True
         if (event := self.bus.consume_event(RadioStatusTrack.EVENT_VOLUME)) is not None:
-            self.bus.set_value("radio/volume", json.dumps(event.__dict__))
+            self.bus.set_value("radio/volume", event.__dict__)
+            need_publishing = True
         if (event := self.bus.consume_event(RadioStatusTrack.EVENT_PLAY_INFO)) is not None:
-            self.bus.set_value("radio/playinfo", json.dumps({"playinfo": event}))
+            self.bus.set_value("radio/playinfo", event)
+            need_publishing = True
 
-
-# # # TODO external monitoring for home control center
-# import pylibmc
-# import time
-# mc = pylibmc.Client(["127.0.0.1"], binary=True,behaviors={"tcp_nodelay": True,"ketama": True})
-# while True:
-#     mc.get("radio/station")
-#     mc.get("radio/volume")
-#     mc.get("radio/playinfo")
-#     time.sleep(1)
-#
-# ...
-# '{"name": "Radio Nowy Swiat", "code": "RNS", "url": "http://stream.rcs.revma.com/ypqt40u0x1zuv"}'
-# ...
+        if need_publishing:
+            self.mqttc.publish(MQTT_TOPIC, json.dumps({
+                "station": self.bus.get_value("radio/station"),
+                "volume": self.bus.get_value("radio/volume"),
+                "playinfo": self.bus.get_value("radio/playinfo"),
+                }))

@@ -72,3 +72,6 @@ class Bus:
         with self.pool.reserve() as mc:
             return mc.set(name, value)
 
+    def get_value(self, name):
+        with self.pool.reserve() as mc:
+            return mc.get(name)
