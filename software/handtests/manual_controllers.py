@@ -52,7 +52,7 @@ class ManualVolumeController(AbstractVolumeController):
 
 if __name__ == "__main__":
     try:
-        keyboard = KeyboardController()
+        keyboard = KeyboardController(ManualStationController(), ManualVolumeController())
         keyboard.run()
     except KeyboardInterrupt:
         pass

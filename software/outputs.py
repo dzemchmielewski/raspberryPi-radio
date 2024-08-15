@@ -152,7 +152,8 @@ class RadioStatusTrack(RadioItem):
 
         if need_publishing:
             self.mqttc.publish(MQTT_TOPIC, json.dumps({
-                "station": self.bus.get_value("radio/station"),
-                "volume": self.bus.get_value("radio/volume"),
-                "playinfo": self.bus.get_value("radio/playinfo"),
-                }))
+                "radio": {
+                    "station": self.bus.get_value("radio/station"),
+                    "volume": self.bus.get_value("radio/volume"),
+                    "playinfo": self.bus.get_value("radio/playinfo"),
+                }}), retain=True)
