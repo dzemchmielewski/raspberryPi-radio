@@ -129,7 +129,7 @@ class RadioStatusTrack(RadioItem):
         super(RadioStatusTrack, self).__init__(Bus(TRACK_OUTPUT_LOG, RadioStatusTrack.CODE), loop_sleep=2)
         self.mqttc = mqtt.Client("radio", protocol=mqtt.MQTTv5)
         self.mqttc.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
-        self.mqttc.will_set(MQTT_TOPIC, self.MQTT_LAST_WILL)
+        self.mqttc.will_set(MQTT_TOPIC, self.MQTT_LAST_WILL, retain=True)
         self.mqttc.connect(MQTT_HOST, MQTT_PORT)
         self.mqttc.loop_start()
 
@@ -151,9 +151,13 @@ class RadioStatusTrack(RadioItem):
             need_publishing = True
 
         if need_publishing:
+            volume = self.bus.get_value("radio/volume")
+            if not volume:
+                volume = {"volume": None, "is_muted": None}
+
             self.mqttc.publish(MQTT_TOPIC, json.dumps({
                 "radio": {
                     "station": self.bus.get_value("radio/station"),
-                    "volume": self.bus.get_value("radio/volume"),
+                    "volume":  volume,
                     "playinfo": self.bus.get_value("radio/playinfo"),
-                }}), retain=True)
+                }}), retain=False)
