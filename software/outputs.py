@@ -2,8 +2,9 @@
 import json
 
 from bus import Bus
-from configuration import FULL_LOAD, DISPLAY_WIDTH, DISPLAY_HEIGHT, MQTT_USERNAME, MQTT_PASSWORD, MQTT_HOST, MQTT_PORT, MQTT_TOPIC
-from entities import TunerStatus, RadioItem,LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, RecognizeState, TRACK_OUTPUT_LOG
+from configuration import FULL_LOAD, DISPLAY_WIDTH, DISPLAY_HEIGHT, MQTT_USERNAME, MQTT_PASSWORD, MQTT_HOST, MQTT_PORT, MQTT_TOPIC, \
+    MQTT_TOPIC_LIVE
+from entities import TunerStatus, RadioItem, LED_OUTPUT_LOG, DISPLAY_OUTPUT_LOG, RecognizeState, TRACK_OUTPUT_LOG, now, SECOND
 from display_manager import DisplayManager
 import paho.mqtt.client as mqtt
 
@@ -124,17 +125,20 @@ class RadioStatusTrack(RadioItem):
     EVENT_VOLUME = "volume"
     EVENT_PLAY_INFO = "playinfo"
     MQTT_LAST_WILL = json.dumps({"live": False})
+    MQTT_I_AM_ALIVE = json.dumps({"live": True})
 
     def __init__(self):
         super(RadioStatusTrack, self).__init__(Bus(TRACK_OUTPUT_LOG, RadioStatusTrack.CODE), loop_sleep=2)
         self.mqttc = mqtt.Client("radio", protocol=mqtt.MQTTv5)
         self.mqttc.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
-        self.mqttc.will_set(MQTT_TOPIC, self.MQTT_LAST_WILL, retain=True)
+        self.mqttc.will_set(MQTT_TOPIC_LIVE, self.MQTT_LAST_WILL, retain=True)
         self.mqttc.connect(MQTT_HOST, MQTT_PORT)
+        self.mqttc.publish(MQTT_TOPIC_LIVE, self.MQTT_I_AM_ALIVE, retain=True)
+        self.last_message_time = now()
         self.mqttc.loop_start()
 
     def exit(self):
-        self.mqttc.publish(MQTT_TOPIC, self.MQTT_LAST_WILL)
+        self.mqttc.publish(MQTT_TOPIC_LIVE, self.MQTT_LAST_WILL, retain=True)
         self.mqttc.disconnect()
         self.mqttc.loop_stop()
 
@@ -161,3 +165,8 @@ class RadioStatusTrack(RadioItem):
                     "volume":  volume,
                     "playinfo": self.bus.get_value("radio/playinfo"),
                 }}), retain=False)
+            self.last_message_time = now()
+
+        if now() > self.last_message_time + (35 * SECOND):
+            self.mqttc.publish(MQTT_TOPIC_LIVE, self.MQTT_I_AM_ALIVE, retain=True)
+            self.last_message_time = now()
