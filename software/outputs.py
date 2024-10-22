@@ -138,7 +138,8 @@ class RadioStatusTrack(RadioItem):
         self.mqttc.loop_start()
 
     def exit(self):
-        self.mqttc.publish(MQTT_TOPIC_LIVE, self.MQTT_LAST_WILL, retain=True)
+        msg_info = self.mqttc.publish(MQTT_TOPIC_LIVE, self.MQTT_LAST_WILL, retain=True)
+        msg_info.wait_for_publish()
         self.mqttc.disconnect()
         self.mqttc.loop_stop()
 

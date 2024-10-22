@@ -74,5 +74,5 @@ VLC_PORT = 4444
 MQTT_HOST = "192.168.0.21"
 MQTT_PORT = 1883
 from confidential.mqtt import MQTT_USERNAME, MQTT_PASSWORD
-MQTT_TOPIC = "homectrl/radio"
-MQTT_TOPIC_LIVE = "homectrl/radio/live"
+MQTT_TOPIC = "homectrl/device/radio/data"
+MQTT_TOPIC_LIVE = "homectrl/device/radio/live"
